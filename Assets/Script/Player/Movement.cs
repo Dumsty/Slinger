@@ -1,6 +1,7 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     Rigidbody rb;
     [SerializeField] private float playerSpeed;
@@ -18,6 +19,8 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (!IsOwner) return;
+
         if (Input.GetKey(KeyCode.C))
         {
             Vector3 steer = Camera.main.transform.TransformDirection(new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical")));
@@ -46,6 +49,8 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        if (!IsOwner) return;
+        if (PauseMenu.paused) return;
         if (grounded && Input.GetButtonDown("Jump"))
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }

@@ -1,8 +1,9 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class CameraMouseCon : MonoBehaviour
+public class CameraMouseCon : NetworkBehaviour
 {   
-    [SerializeField] public float mouseSensitivity = 1.0f;
+    public static float mouseSensitivity = 1.0f;
     [SerializeField] private float slideHeight = -0.3f;
 
     private float yaw = 0.0f;
@@ -16,6 +17,9 @@ public class CameraMouseCon : MonoBehaviour
 
     void Update()
     {
+        if (!IsOwner) return;
+        if (PauseMenu.paused) return;
+        
         yaw += mouseSensitivity * Input.GetAxis("Mouse X");
         pitch -= mouseSensitivity * Input.GetAxis("Mouse Y");
         pitch = Mathf.Clamp(pitch, -90f, 90f);

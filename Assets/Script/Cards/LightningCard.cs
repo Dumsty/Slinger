@@ -3,10 +3,16 @@ using UnityEngine;
 public class LightningCard : Card
 {
     public float range = 50f;
-    public LineRenderer boltPrefab;
+    public static LineRenderer boltPrefab;
+    public LineRenderer boltPrefabRef;
     public float boltDuration = 0.1f;
     public Vector3 originOffset;
     public float damage = 10f;
+
+    void Awake()
+    {
+        boltPrefab = boltPrefabRef;
+    }
 
     public override void Play()
     {
@@ -19,11 +25,18 @@ public class LightningCard : Card
             endPoint = hit.point;
             Enemy enemy = hit.collider.GetComponent<Enemy>();
             if (enemy != null) enemy.TakeDamage(damage);
+            Health health = hit.collider.GetComponent<Health>();
+            if (health != null) health.TakeDamage(damage);
         }
 
+        ProjectileSpawner.Local().FireLightning(origin, endPoint);
+    }
+
+    public static void SpawnVisual(Vector3 origin, Vector3 endPoint)
+    {
         LineRenderer bolt = Instantiate(boltPrefab);
         bolt.SetPosition(0, origin);
         bolt.SetPosition(1, endPoint);
-        Destroy(bolt.gameObject, boltDuration);
+        Object.Destroy(bolt.gameObject, 0.1f);
     }
 }

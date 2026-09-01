@@ -2,21 +2,14 @@ using UnityEngine;
 
 public class FireballCard : Card
 {
-    public GameObject ballPrefab;
     public float force = 20f;
-    private Collider playerCollider;
-
-    void Awake()
-    {
-        playerCollider = FindAnyObjectByType<Health>().GetComponent<Collider>();
-    }
+    public float damage = 10f;
 
     public override void Play()
     {
-        GameObject ball = Instantiate(ballPrefab, Camera.main.transform.position, Quaternion.identity);
-        Rigidbody rb = ball.GetComponent<Rigidbody>();
-        rb.useGravity = false;
-        rb.AddForce(Camera.main.transform.forward * force, ForceMode.Impulse);
-        Physics.IgnoreCollision(ball.GetComponent<Collider>(), playerCollider);
+        Transform cam = Camera.main.transform;
+        ProjectileSpawner spawner = ProjectileSpawner.Local();
+        Debug.Log("Firing via spawner on " + spawner.gameObject.name + " OwnerClientId=" + spawner.OwnerClientId);
+        spawner.FireFireball(cam.position, cam.forward, force, damage);
     }
 }

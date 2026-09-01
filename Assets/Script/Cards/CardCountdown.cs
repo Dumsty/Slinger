@@ -1,15 +1,38 @@
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Netcode;
 
-public class CardTimer : MonoBehaviour
+public class CardCountdown : NetworkBehaviour
 {
-    public Slider timerBar;
     public float fillTime = 5f;
-    public FillHand fillHand;
+    private Slider timerBar;
+    private Hand fillHand;
     private float t;
+    private float retryTimer;
 
     void Update()
     {
+        if (!IsOwner) return;
+
+        if (timerBar == null)
+        {
+            GameObject obj = GameObject.Find("TimerBar");
+            if (obj != null) timerBar = obj.GetComponent<Slider>();
+            return;
+        }
+
+        if (fillHand == null || fillHand.playerHand == null)
+        {
+            retryTimer -= Time.deltaTime;
+            if (retryTimer <= 0)
+            {
+                retryTimer = 0.5f;
+                fillHand = FindAnyObjectByType<Hand>();
+                if (fillHand != null) fillHand.playerHand = PlayerHand.Local();
+            }
+            return;
+        }
+
         bool full = System.Array.TrueForAll(fillHand.playerHand.hand, c => c != null);
         if (full)
         {

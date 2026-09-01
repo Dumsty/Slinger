@@ -1,12 +1,16 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class SelectCard : MonoBehaviour
+public class SelectCard : NetworkBehaviour
 {
     public PlayerHand playerHand;
     public int activeSlot = -1;
 
     void Update()
     {
+        if (!IsOwner) return;
+        if (playerHand == null) { playerHand = PlayerHand.Local(); return; }
+        if (PauseMenu.paused) return;
         if (activeSlot == -1)
         {
             int first = 0;

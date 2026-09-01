@@ -1,6 +1,7 @@
 using UnityEngine;
+using Unity.Netcode;
 
-public class PlayerHand : MonoBehaviour
+public class PlayerHand : NetworkBehaviour
 {
     public Card[] hand = new Card[7];
     public Transform handCenter;
@@ -11,6 +12,13 @@ public class PlayerHand : MonoBehaviour
     public bool reverseFan = false;
     public float archHeight = 0.05f;
     public AnimationCurve archCurve = AnimationCurve.Linear(0, 1, 1, 0);
+
+    public static PlayerHand Local()
+    {
+        foreach (var ph in FindObjectsByType<PlayerHand>(FindObjectsSortMode.None))
+            if (ph.IsOwner) return ph;
+        return null;
+    }
 
     public void SetCard(int slot, Card card)
     {
