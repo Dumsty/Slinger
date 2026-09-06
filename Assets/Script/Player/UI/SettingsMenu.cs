@@ -5,18 +5,14 @@ public class SettingsMenu : MonoBehaviour
 {
     public GameObject settingsUI;
     public GameObject pauseUI;
+    public GameObject mainMenuUI;
     public Slider sensitivitySlider;
     public Slider fovSlider;
 
     void Start()
     {
-        sensitivitySlider.value = CameraMouseCon.mouseSensitivity;
-    }
-
-    void Update()
-    {
-        if (Camera.main != null && fovSlider.value == 0)
-            fovSlider.value = Camera.main.fieldOfView;
+        if (sensitivitySlider != null) sensitivitySlider.value = CameraMouseCon.mouseSensitivity;
+        if (fovSlider != null) fovSlider.value = CameraMouseCon.fieldOfView;
     }
 
     public void SetSensitivity(float value)
@@ -26,12 +22,22 @@ public class SettingsMenu : MonoBehaviour
 
     public void SetFOV(float value)
     {
-        if (Camera.main != null) Camera.main.fieldOfView = value;
+        CameraMouseCon.fieldOfView = value;
+        CameraMouseCon local = FindLocalCameraMouseCon();
+        if (local != null) local.ApplyFOV();
     }
 
     public void Back()
     {
         settingsUI.SetActive(false);
-        pauseUI.SetActive(true);
+        if (pauseUI != null) pauseUI.SetActive(true);
+        if (mainMenuUI != null) mainMenuUI.SetActive(true);
+    }
+
+    CameraMouseCon FindLocalCameraMouseCon()
+    {
+        foreach (var c in FindObjectsByType<CameraMouseCon>(FindObjectsSortMode.None))
+            if (c.IsOwner) return c;
+        return null;
     }
 }

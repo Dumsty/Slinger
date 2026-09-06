@@ -30,7 +30,7 @@ public class FireBallExplode : MonoBehaviour
         if (enemy != null) enemy.TakeDamage(damage);
 
         Health health = col.gameObject.GetComponent<Health>();
-        if (health != null) health.TakeDamage(damage);
+        if (health != null) health.TakeDamage(damage, ownerId);
 
         TryDestroy();
     }

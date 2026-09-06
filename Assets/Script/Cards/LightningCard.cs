@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Netcode;
 
 public class LightningCard : Card
 {
@@ -19,6 +20,7 @@ public class LightningCard : Card
         Transform cam = Camera.main.transform;
         Vector3 origin = cam.position + cam.TransformDirection(originOffset);
         Vector3 endPoint = origin + cam.forward * range;
+        ulong casterId = NetworkManager.Singleton.LocalClientId;
 
         if (Physics.Raycast(origin, cam.forward, out RaycastHit hit, range))
         {
@@ -26,7 +28,7 @@ public class LightningCard : Card
             Enemy enemy = hit.collider.GetComponent<Enemy>();
             if (enemy != null) enemy.TakeDamage(damage);
             Health health = hit.collider.GetComponent<Health>();
-            if (health != null) health.TakeDamage(damage);
+            if (health != null) health.TakeDamage(damage, casterId);
         }
 
         ProjectileSpawner.Local().FireLightning(origin, endPoint);

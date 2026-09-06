@@ -26,11 +26,31 @@ public class PlayerHand : NetworkBehaviour
         Center();
     }
 
-    public void RemoveCard(int slot)
+    public void RemoveCard(int slot, Deck deck = null)
     {
+        if (deck != null && hand[slot].prefabRef != null) deck.Discard(hand[slot].prefabRef);
         Destroy(hand[slot].gameObject);
         hand[slot] = null;
         Center();
+    }
+
+    public void ClearHand()
+    {
+        if (IsServer)
+            ClearHandClientRpc();
+    }
+
+    [ClientRpc]
+    void ClearHandClientRpc()
+    {
+        if (!IsOwner) return;
+
+        Hand h = GetComponent<Hand>();
+        Deck deck = h != null ? h.deck : null;
+
+        for (int i = 0; i < hand.Length; i++)
+            if (hand[i] != null)
+                RemoveCard(i, deck);
     }
 
     void Center()

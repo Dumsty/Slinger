@@ -4,15 +4,18 @@ using UnityEngine.Rendering;
 public class MenuBlur : MonoBehaviour
 {
     public Volume blurVolume;
-    public GameObject startMenu;
     public float fadeSpeed = 5f;
-    public float minWeight = 0f;
-    public float maxWeight = 1f;
-    private float targetWeight;
+    public GameObject[] menusToWatch;
 
     void Update()
     {
-        targetWeight = (PauseMenu.paused || startMenu.activeInHierarchy) ? maxWeight : minWeight;
-        blurVolume.weight = Mathf.MoveTowards(blurVolume.weight, targetWeight, fadeSpeed * Time.deltaTime);
+        if (blurVolume == null) return;
+
+        bool anyMenuOpen = false;
+        foreach (var menu in menusToWatch)
+            if (menu != null && menu.activeInHierarchy) { anyMenuOpen = true; break; }
+
+        float target = anyMenuOpen ? 1f : 0f;
+        blurVolume.weight = Mathf.MoveTowards(blurVolume.weight, target, fadeSpeed * Time.deltaTime);
     }
 }

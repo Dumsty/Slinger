@@ -5,14 +5,17 @@ using Unity.Services.Authentication;
 using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using Unity.Netcode.Transports.UTP;
-using System.Threading.Tasks;
 
 public class NetworkUI : MonoBehaviour
 {
     public TMPro.TMP_InputField joinCodeInput;
     public TMPro.TMP_Text joinCodeDisplay;
+    public TMPro.TMP_Text errorDisplay;
     public GameObject connectUI;
-    public GameObject hud;
+    public GameObject duelUI;
+    public string gameSceneName = "Game";
+
+    public static string HostJoinCode = "";
 
     async void Start()
     {
@@ -23,30 +26,59 @@ public class NetworkUI : MonoBehaviour
 
     public async void Host()
     {
-        Allocation allocation = await RelayService.Instance.CreateAllocationAsync(2);
-        string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
-        joinCodeDisplay.text = "Code: " + joinCode;
+        try
+        {
+            Allocation allocation = await RelayService.Instance.CreateAllocationAsync(2);
+            string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
+            HostJoinCode = joinCode;
+            if (joinCodeDisplay != null) joinCodeDisplay.text = "Code: " + joinCode;
 
-        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(
-            allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port,
-            allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(
+                allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port,
+                allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
 
-        NetworkManager.Singleton.StartHost();
-        connectUI.SetActive(false);
-        hud.SetActive(true);
+            NetworkManager.Singleton.StartHost();
+            NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
+            CloseMenus();
+        }
+        catch (System.Exception e)
+        {
+            ShowError("Failed to host: " + e.Message);
+        }
     }
 
     public async void Join()
     {
-        JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(joinCodeInput.text);
+        try
+        {
+            Debug.Log($"Join() called. joinCodeInput={(joinCodeInput != null ? "OK" : "NULL")}, " +
+                    $"text='{(joinCodeInput != null ? joinCodeInput.text : "N/A")}'");
 
-        NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(
-            allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port,
-            allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData,
-            allocation.HostConnectionData);
+            JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(joinCodeInput.text);
 
-        NetworkManager.Singleton.StartClient();
-        connectUI.SetActive(false);
-        hud.SetActive(true);
+            NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(
+                allocation.RelayServer.IpV4, (ushort)allocation.RelayServer.Port,
+                allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData,
+                allocation.HostConnectionData);
+
+            NetworkManager.Singleton.StartClient();
+            CloseMenus();
+        }
+        catch (System.Exception e)
+        {
+            ShowError("Failed to join: " + e.Message);
+        }
+    }
+
+    void CloseMenus()
+    {
+        if (connectUI != null) connectUI.SetActive(false);
+        if (duelUI != null) duelUI.SetActive(false);
+    }
+
+    void ShowError(string message)
+    {
+        if (errorDisplay != null) errorDisplay.text = message;
+        else Debug.LogError(message);
     }
 }

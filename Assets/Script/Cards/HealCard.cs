@@ -2,15 +2,21 @@ using UnityEngine;
 
 public class HealCard : Card
 {
-    [SerializeField] private Health playerHealth;
-    void Awake()
-    {
-        if (playerHealth == null)
-            playerHealth = FindAnyObjectByType<Health>();
-    }
+    public float healAmount = 10f;
+    private Health playerHealth;
 
     public override void Play()
     {
-        playerHealth.TakeDamage(-10);
+        if (playerHealth == null) playerHealth = FindLocalHealth();
+        if (playerHealth == null) return;
+
+        playerHealth.TakeDamage(-healAmount, playerHealth.OwnerClientId);
+    }
+
+    Health FindLocalHealth()
+    {
+        foreach (var h in FindObjectsByType<Health>(FindObjectsSortMode.None))
+            if (h.IsOwner) return h;
+        return null;
     }
 }
