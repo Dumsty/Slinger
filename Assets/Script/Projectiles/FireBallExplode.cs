@@ -1,11 +1,11 @@
 using UnityEngine;
 using Unity.Netcode;
 
-public class FireBallExplode : MonoBehaviour
+public class FireBallExplode : NetworkBehaviour
 {
     public float damage = 10f;
     public float range = 30f;
-    public ulong ownerId;
+    public NetworkVariable<ulong> ownerId = new NetworkVariable<ulong>(ulong.MaxValue);
     private Vector3 startPos;
 
     void Start()
@@ -22,15 +22,15 @@ public class FireBallExplode : MonoBehaviour
     void OnCollisionEnter(Collision col)
     {
         NetworkObject netObj = col.gameObject.GetComponent<NetworkObject>();
-        Debug.Log("Fireball NetObjId=" + GetComponent<NetworkObject>().NetworkObjectId + " ownerId=" + ownerId + " hit object ownerId=" + (netObj != null ? netObj.OwnerClientId.ToString() : "none"));
 
-        if (netObj != null && netObj.OwnerClientId == ownerId) return;
+        if (netObj != null && netObj.OwnerClientId == ownerId.Value) return;
+        if (!IsServer) return;
 
         Enemy enemy = col.gameObject.GetComponent<Enemy>();
         if (enemy != null) enemy.TakeDamage(damage);
 
         Health health = col.gameObject.GetComponent<Health>();
-        if (health != null) health.TakeDamage(damage, ownerId);
+        if (health != null) health.TakeDamage(damage, ownerId.Value);
 
         TryDestroy();
     }

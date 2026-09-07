@@ -7,13 +7,16 @@ public class ProjectileSpawner : NetworkBehaviour
     public GameObject blindBoltPrefab;
     public float ProjectileForceBonus;
     public float ProjectileSizeBonus;
-    private Collider ownerCollider;
+    private Collider[] ownerColliders;
 
     public override void OnNetworkSpawn()
     {
-        ownerCollider = GetComponent<Collider>();
-        if (ownerCollider == null) ownerCollider = GetComponentInParent<Collider>();
-        if (ownerCollider == null) ownerCollider = GetComponentInChildren<Collider>();
+        ownerColliders = GetComponentsInChildren<Collider>();
+        if (ownerColliders.Length == 0)
+        {
+            Collider parentCollider = GetComponentInParent<Collider>();
+            if (parentCollider != null) ownerColliders = new Collider[] { parentCollider };
+        }
     }
 
     public static ProjectileSpawner Local()
@@ -21,6 +24,16 @@ public class ProjectileSpawner : NetworkBehaviour
         foreach (var ps in FindObjectsByType<ProjectileSpawner>(FindObjectsSortMode.None))
             if (ps.IsOwner) return ps;
         return null;
+    }
+
+    private void IgnoreOwnerCollisions(GameObject projectile)
+    {
+        if (ownerColliders == null) return;
+
+        Collider[] projectileColliders = projectile.GetComponentsInChildren<Collider>();
+        foreach (var oc in ownerColliders)
+            foreach (var pc in projectileColliders)
+                if (oc != null && pc != null) Physics.IgnoreCollision(pc, oc);
     }
 
     public void FireFireball(Vector3 position, Vector3 direction, float force, float damage)
@@ -37,7 +50,6 @@ public class ProjectileSpawner : NetworkBehaviour
 
         FireBallExplode explode = ball.GetComponent<FireBallExplode>();
         Rigidbody rb = ball.GetComponent<Rigidbody>();
-        Collider ballCollider = ball.GetComponent<Collider>();
 
         if (explode == null || rb == null)
         {
@@ -46,11 +58,10 @@ public class ProjectileSpawner : NetworkBehaviour
         }
 
         explode.damage = damage;
-        explode.ownerId = OwnerClientId;
+        explode.ownerId.Value = OwnerClientId;
 
         rb.useGravity = false;
-        if (ballCollider != null && ownerCollider != null)
-            Physics.IgnoreCollision(ballCollider, ownerCollider);
+        IgnoreOwnerCollisions(ball);
 
         ball.GetComponent<NetworkObject>().Spawn();
         rb.AddForce(direction * force, ForceMode.Impulse);
@@ -70,7 +81,6 @@ public class ProjectileSpawner : NetworkBehaviour
 
         BlindBoltExplode explode = bolt.GetComponent<BlindBoltExplode>();
         Rigidbody rb = bolt.GetComponent<Rigidbody>();
-        Collider boltCollider = bolt.GetComponent<Collider>();
 
         if (explode == null || rb == null)
         {
@@ -78,11 +88,10 @@ public class ProjectileSpawner : NetworkBehaviour
             return;
         }
 
-        explode.ownerId = OwnerClientId;
+        explode.ownerId.Value = OwnerClientId;
 
         rb.useGravity = false;
-        if (boltCollider != null && ownerCollider != null)
-            Physics.IgnoreCollision(boltCollider, ownerCollider);
+        IgnoreOwnerCollisions(bolt);
 
         bolt.GetComponent<NetworkObject>().Spawn();
         rb.AddForce(direction * force, ForceMode.Impulse);

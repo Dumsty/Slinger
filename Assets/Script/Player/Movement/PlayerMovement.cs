@@ -112,9 +112,6 @@ public class PlayerMovement : NetworkBehaviour
 
     private void HandleGroundedMovement(Vector3 inputDir, bool effectivelyGrounded, bool wantsCrouch)
     {
-        if (effectivelyGrounded)
-            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
-
         inputDir = Vector3.ClampMagnitude(inputDir, 1f);
         float speedTarget = (wantsCrouch ? crouchSpeed : playerSpeed) + SpeedBonus;
         Vector3 targetVelocity = inputDir * speedTarget;
@@ -123,7 +120,7 @@ public class PlayerMovement : NetworkBehaviour
         currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, (playerSpeed / ramp) * Time.fixedDeltaTime);
 
         lastMove = currentVelocity;
-        rb.MovePosition(rb.position + lastMove * Time.fixedDeltaTime);
+        rb.linearVelocity = new Vector3(lastMove.x, rb.linearVelocity.y, lastMove.z);
     }
 
     private void HandleJump()
@@ -149,6 +146,20 @@ public class PlayerMovement : NetworkBehaviour
         transform.position = pos;
     }
 
-    void OnCollisionStay() { grounded = true; }
-    void OnCollisionExit() { grounded = false; }
+    void OnCollisionStay(Collision collision)
+    {
+        foreach (ContactPoint contact in collision.contacts)
+        {
+            if (contact.normal.y > 0.5f)
+            {
+                grounded = true;
+                return;
+            }
+        }
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        grounded = false;
+    }
 }

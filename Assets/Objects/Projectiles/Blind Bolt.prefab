@@ -141,7 +141,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.01
+  m_Radius: 0.001
   m_Center: {x: -4.656613e-10, y: 0, z: 0}
 --- !u!114 &-8590215882083530453
 MonoBehaviour:
@@ -228,6 +228,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d9cbfe7b757b9c458bfc29157398fa5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BlindBoltExplode
+  ShowTopMostFoldoutHeaderGroup: 1
   blindDuration: 2
   range: 70
-  ownerId: 0
+  ownerId:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: 18446744073709551615

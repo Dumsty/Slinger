@@ -24,4 +24,13 @@ public class MainMenu : MonoBehaviour
         if (duelUI != null) duelUI.SetActive(false);
         if (mainMenuUI != null) mainMenuUI.SetActive(true);
     }
+
+    public void Quit()
+    {
+    #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+    #else
+        Application.Quit();
+    #endif
+    }
 }

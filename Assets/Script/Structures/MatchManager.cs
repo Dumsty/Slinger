@@ -21,7 +21,10 @@ public class MatchManager : NetworkBehaviour
     public NetworkVariable<int> scoreB = new NetworkVariable<int>(0);
     public NetworkVariable<float> countdownRemaining = new NetworkVariable<float>(0f);
     public NetworkVariable<bool> isSoloMode = new NetworkVariable<bool>(false);
+    public NetworkVariable<bool> soloPracticing = new NetworkVariable<bool>(false);
     public NetworkVariable<int> winner = new NetworkVariable<int>(0);
+    public NetworkVariable<ulong> clientAId = new NetworkVariable<ulong>(ulong.MaxValue);
+    public NetworkVariable<ulong> clientBId = new NetworkVariable<ulong>(ulong.MaxValue);
 
     private ulong clientA = ulong.MaxValue;
     private ulong clientB = ulong.MaxValue;
@@ -48,11 +51,13 @@ public class MatchManager : NetworkBehaviour
         if (clientId == clientA)
         {
             clientA = ulong.MaxValue;
+            clientAId.Value = ulong.MaxValue;
             playerAReady.Value = false;
         }
         else if (clientId == clientB)
         {
             clientB = ulong.MaxValue;
+            clientBId.Value = ulong.MaxValue;
             playerBReady.Value = false;
         }
 
@@ -65,10 +70,12 @@ public class MatchManager : NetworkBehaviour
         if (clientA == ulong.MaxValue)
         {
             clientA = clientId;
+            clientAId.Value = clientId;
         }
         else if (clientB == ulong.MaxValue && clientId != clientA)
         {
             clientB = clientId;
+            clientBId.Value = clientId;
         }
         else
         {
@@ -85,12 +92,21 @@ public class MatchManager : NetworkBehaviour
     {
         if (!IsServer) return;
         isSoloMode.Value = true;
+        soloPracticing.Value = false;
         phase.Value = MatchPhase.Solo;
     }
 
     public bool IsMatchInProgress()
     {
-        return phase.Value == MatchPhase.InProgress || phase.Value == MatchPhase.Solo;
+        if (isSoloMode.Value) return soloPracticing.Value;
+        return phase.Value == MatchPhase.InProgress;
+    }
+
+    public bool IsClientReady(ulong clientId)
+    {
+        if (clientId == clientAId.Value) return playerAReady.Value;
+        if (clientId == clientBId.Value) return playerBReady.Value;
+        return false;
     }
 
     public void SetReady(ulong clientId, bool ready)
@@ -98,13 +114,33 @@ public class MatchManager : NetworkBehaviour
         if (!IsServer) { SetReadyServerRpc(clientId, ready); return; }
         if (phase.Value != MatchPhase.Lobby && phase.Value != MatchPhase.Countdown && phase.Value != MatchPhase.Solo) return;
 
+        if (ready && !HasFullDeck(clientId))
+        {
+            ClientRpcParams targetParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { clientId } }
+            };
+            ReadyRejectedClientRpc("Deck must be full to ready up", targetParams);
+            return;
+        }
+
         if (clientId == clientA) playerAReady.Value = ready;
         else if (clientId == clientB) playerBReady.Value = ready;
 
         if (isSoloMode.Value)
         {
-            if (playerAReady.Value)
+            if (ready && playerAReady.Value)
+            {
                 StartSoloPractice();
+            }
+            else if (!ready && soloPracticing.Value)
+            {
+                soloPracticing.Value = false;
+                TeleportPlayer(clientA, lobbySpawnPoint);
+                Health h = GetHealthForClient(clientA);
+                if (h != null) { h.ResetHealth(); h.ClearBuffs(); }
+                ClearHandForClient(clientA);
+            }
         }
         else
         {
@@ -118,9 +154,26 @@ public class MatchManager : NetworkBehaviour
         SetReady(clientId, ready);
     }
 
+    [ClientRpc]
+    void ReadyRejectedClientRpc(string message, ClientRpcParams rpcParams = default)
+    {
+        ReadyToggle.ShowRejectionMessage(message);
+    }
+
+    bool HasFullDeck(ulong clientId)
+    {
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return false;
+        if (client.PlayerObject == null) return false;
+
+        Hand hand = client.PlayerObject.GetComponent<Hand>();
+        if (hand == null || hand.deck == null) return false;
+
+        return hand.deckSize.Value >= hand.deck.maxDeckSize;
+    }
+
     void StartSoloPractice()
     {
-        phase.Value = MatchPhase.Solo;
+        soloPracticing.Value = true;
         TeleportPlayer(clientA, spawnPointA);
         Health h = GetHealthForClient(clientA);
         if (h != null) h.ResetHealth();
@@ -169,6 +222,7 @@ public class MatchManager : NetworkBehaviour
 
         if (phase.Value == MatchPhase.Solo)
         {
+            soloPracticing.Value = false;
             TeleportPlayer(victimId, lobbySpawnPoint);
             Health h = GetHealthForClient(victimId);
             if (h != null) { h.ResetHealth(); h.ClearBuffs(); }
@@ -252,5 +306,19 @@ public class MatchManager : NetworkBehaviour
         if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return null;
         if (client.PlayerObject == null) return null;
         return client.PlayerObject.GetComponent<Health>();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientConnectedCallback -= OnClientConnected;
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnected;
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (Singleton == this) Singleton = null;
     }
 }

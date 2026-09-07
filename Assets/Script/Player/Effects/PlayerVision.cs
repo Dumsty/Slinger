@@ -6,16 +6,7 @@ public class PlayerVision : NetworkBehaviour
 {
     public Image blindOverlay;
     private float blindTimer;
-
-    public override void OnNetworkSpawn()
-    {
-        if (!IsOwner) return;
-        if (blindOverlay == null)
-        {
-            GameObject obj = GameObject.Find("BlindOverlay");
-            if (obj != null) blindOverlay = obj.GetComponent<Image>();
-        }
-    }
+    private float retryTimer;
 
     public static PlayerVision Local()
     {
@@ -27,7 +18,18 @@ public class PlayerVision : NetworkBehaviour
     void Update()
     {
         if (!IsOwner) return;
-        if (blindOverlay == null) return;
+
+        if (blindOverlay == null)
+        {
+            retryTimer -= Time.deltaTime;
+            if (retryTimer <= 0)
+            {
+                retryTimer = 0.5f;
+                GameObject obj = GameObject.Find("BlindOverlay");
+                if (obj != null) blindOverlay = obj.GetComponent<Image>();
+            }
+            return;
+        }
 
         if (blindTimer > 0)
         {

@@ -104,7 +104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d678e018396e272429d3c93868f7ff31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InvisibilityCard
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
   duration: 3
 --- !u!1 &6653559487940277562

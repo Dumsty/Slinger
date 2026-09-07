@@ -10,13 +10,14 @@ public class DeckBuilderUI : MonoBehaviour
     public TMP_Text deckSizeText;
     private CardInventory inventory;
     private Deck deck;
+    private Hand hand;
     public static bool deckChanged;
 
     void OnEnable()
     {
         inventory = CardInventory.Local();
-        Hand h = Hand.Local();
-        deck = h != null ? h.deck : null;
+        hand = Hand.Local();
+        deck = hand != null ? hand.deck : null;
         deckChanged = false;
 
         ReconcileDeckWithInventory();
@@ -60,6 +61,7 @@ public class DeckBuilderUI : MonoBehaviour
         if (inventory == null || deck == null) return;
 
         UpdateDeckSizeText();
+        if (hand != null) hand.ReportDeckSize(deck.deckList.Count);
 
         foreach (var entry in inventory.entries)
         {

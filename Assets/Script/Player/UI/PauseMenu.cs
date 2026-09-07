@@ -1,21 +1,43 @@
 using UnityEngine;
 using Unity.Netcode;
+using System.Collections;
 
 public class PauseMenu : MonoBehaviour
 {
     public GameObject pauseUI;
     public GameObject settingsUI;
     public GameObject hud;
+    public GameObject deckBuilderUI;
     public static bool paused;
+
+    private bool pausedFromShop;
 
     void Update()
     {
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            if (paused) Resume();
-            else Pause();
+            if (DeckStation.editingDeck)
+            {
+                CloseShopAndPause();
+            }
+            else if (paused)
+            {
+                Resume();
+            }
+            else
+            {
+                Pause();
+            }
         }
+    }
+
+    void CloseShopAndPause()
+    {
+        pausedFromShop = true;
+        if (deckBuilderUI != null) deckBuilderUI.SetActive(false);
+        DeckStation.editingDeck = false;
+        Pause();
     }
 
     public void Pause()
@@ -32,10 +54,20 @@ public class PauseMenu : MonoBehaviour
         paused = false;
         pauseUI.SetActive(false);
         settingsUI.SetActive(false);
-        if (hud != null) hud.SetActive(true);
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
-        Debug.Log("Resume() ran, cursor set to locked/hidden. Actual state: lockState=" + Cursor.lockState + " visible=" + Cursor.visible);
+
+        if (pausedFromShop)
+        {
+            pausedFromShop = false;
+            if (deckBuilderUI != null) deckBuilderUI.SetActive(true);
+            DeckStation.editingDeck = true;
+            if (hud != null) hud.SetActive(false);
+        }
+        else
+        {
+            if (hud != null) hud.SetActive(true);
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
     }
 
     public void OpenSettings()
@@ -51,8 +83,17 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
+        StartCoroutine(ShutdownAndReturnToMenu());
+    }
+
+    IEnumerator ShutdownAndReturnToMenu()
+    {
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
             NetworkManager.Singleton.Shutdown();
+            while (NetworkManager.Singleton.ShutdownInProgress)
+                yield return null;
+        }
 
         UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
     }

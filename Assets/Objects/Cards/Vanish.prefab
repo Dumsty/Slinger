@@ -104,7 +104,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 788b735aca994454f94d77aa09a5d835, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  icon: {fileID: 0}
+  icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
   duration: 10
   damageThreshold: 20

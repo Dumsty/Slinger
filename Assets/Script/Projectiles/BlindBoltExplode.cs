@@ -1,11 +1,11 @@
 using UnityEngine;
 using Unity.Netcode;
 
-public class BlindBoltExplode : MonoBehaviour
+public class BlindBoltExplode : NetworkBehaviour
 {
     public float blindDuration = 3f;
     public float range = 30f;
-    public ulong ownerId;
+    public NetworkVariable<ulong> ownerId = new NetworkVariable<ulong>(ulong.MaxValue);
     private Vector3 startPos;
 
     void Start()
@@ -21,22 +21,25 @@ public class BlindBoltExplode : MonoBehaviour
 
     void OnCollisionEnter(Collision col)
     {
-        NetworkObject netObj = col.gameObject.GetComponent<NetworkObject>();
-        if (netObj != null && netObj.OwnerClientId == ownerId) { TryDestroy(); return; }
+        NetworkObject netObj = col.gameObject.GetComponentInParent<NetworkObject>();
+        Debug.Log($"BlindBolt hit {col.gameObject.name}, netObj found={netObj != null}" +
+                (netObj != null ? $", OwnerClientId={netObj.OwnerClientId}, boltOwnerId={ownerId.Value}" : ""));
+
+        if (netObj != null && netObj.OwnerClientId == ownerId.Value) { TryDestroy(); return; }
+        if (!IsServer) return;
 
         if (netObj != null)
         {
-            PlayerVision vision = col.gameObject.GetComponent<PlayerVision>();
-            Debug.Log($"BlindBolt hit {col.gameObject.name}, netObj found, PlayerVision found={vision != null}");
-
+            PlayerVision vision = netObj.GetComponentInChildren<PlayerVision>();
+            Debug.Log($"PlayerVision found={vision != null} on {netObj.gameObject.name}");
             if (vision != null)
             {
                 ClientRpcParams targetParams = new ClientRpcParams
                 {
                     Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { netObj.OwnerClientId } }
                 };
-                Debug.Log($"Sending blind RPC to client {netObj.OwnerClientId}");
                 vision.ApplyBlindClientRpc(blindDuration, targetParams);
+                Debug.Log($"Sent ApplyBlindClientRpc to client {netObj.OwnerClientId}");
             }
         }
 

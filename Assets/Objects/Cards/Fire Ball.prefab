@@ -287,5 +287,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FireballCard
   icon: {fileID: 0}
   prefabRef: {fileID: 0}
-  force: 20
+  force: 40
   damage: 25

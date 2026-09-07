@@ -5,37 +5,50 @@ using TMPro;
 public class ReadyToggle : MonoBehaviour
 {
     public TMP_Text label;
-    private bool isReady;
+    public TMP_Text messageText;
+    private float messageTimer;
+
+    private static ReadyToggle activeInstance;
+
+    void OnEnable() { activeInstance = this; }
 
     void Update()
     {
-        if (label == null || MatchManager.Singleton == null) return;
-
-        MatchPhase phase = MatchManager.Singleton.phase.Value;
-        bool showing = phase == MatchPhase.Lobby || phase == MatchPhase.Countdown;
-
-        label.gameObject.SetActive(showing);
-
-        if (!showing)
+        if (messageText != null && messageTimer > 0)
         {
-            isReady = false;
-            return;
+            messageTimer -= Time.deltaTime;
+            if (messageTimer <= 0) messageText.text = "";
         }
 
+        if (label == null || MatchManager.Singleton == null || NetworkManager.Singleton == null) return;
+
+        MatchManager mm = MatchManager.Singleton;
+        bool showing = mm.phase.Value == MatchPhase.Lobby
+                    || mm.phase.Value == MatchPhase.Countdown
+                    || (mm.phase.Value == MatchPhase.Solo && !mm.soloPracticing.Value);
+
+        label.gameObject.SetActive(showing);
+        if (!showing) return;
+
+        bool isReady = mm.IsClientReady(NetworkManager.Singleton.LocalClientId);
         label.text = isReady ? "Ready" : "Unready";
 
         if (PauseMenu.paused || DeckStation.editingDeck) return;
 
         if (Input.GetKeyDown(KeyCode.R))
-            Toggle();
+            Toggle(!isReady);
     }
 
-    public void Toggle()
+    public void Toggle(bool ready)
     {
-        if (MatchManager.Singleton == null) return;
-        if (NetworkManager.Singleton == null) return;
+        if (MatchManager.Singleton == null || NetworkManager.Singleton == null) return;
+        MatchManager.Singleton.SetReady(NetworkManager.Singleton.LocalClientId, ready);
+    }
 
-        isReady = !isReady;
-        MatchManager.Singleton.SetReady(NetworkManager.Singleton.LocalClientId, isReady);
+    public static void ShowRejectionMessage(string message)
+    {
+        if (activeInstance == null || activeInstance.messageText == null) return;
+        activeInstance.messageText.text = message;
+        activeInstance.messageTimer = 2.5f;
     }
 }

@@ -50,14 +50,13 @@ public class Health : NetworkBehaviour
 
     void ApplyDamage(float amount, ulong attackerId)
     {
-        Debug.Log($"ApplyDamage called. MatchManager.Singleton={(MatchManager.Singleton != null ? "OK" : "NULL")}, " +
-                $"phase={(MatchManager.Singleton != null ? MatchManager.Singleton.phase.Value.ToString() : "N/A")}, " +
-                $"IsMatchInProgress={(MatchManager.Singleton != null && MatchManager.Singleton.IsMatchInProgress())}");
-
         if (MatchManager.Singleton == null || !MatchManager.Singleton.IsMatchInProgress()) return;
         if (currentHealth.Value <= 0) return;
 
         currentHealth.Value = Mathf.Clamp(currentHealth.Value - amount, 0, maxHealth);
+
+        HitFlash flash = GetComponent<HitFlash>();
+        if (flash != null) flash.TriggerFlash();
 
         if (currentHealth.Value <= 0)
             MatchManager.Singleton.ReportKill(attackerId, OwnerClientId);

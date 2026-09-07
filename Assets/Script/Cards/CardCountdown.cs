@@ -10,6 +10,7 @@ public class CardCountdown : NetworkBehaviour
     private Hand fillHand;
     private float t;
     private float retryTimer;
+    private float revalidateTimer;
 
     public static CardCountdown Local()
     {
@@ -42,6 +43,18 @@ public class CardCountdown : NetworkBehaviour
             return;
         }
 
+        revalidateTimer -= Time.deltaTime;
+        if (revalidateTimer <= 0)
+        {
+            revalidateTimer = 2f;
+            PlayerHand actualHand = PlayerHand.Local();
+            if (actualHand != null && actualHand != fillHand.playerHand)
+            {
+                Debug.LogWarning("CardCountdown: fillHand.playerHand was stale, correcting reference.");
+                fillHand.playerHand = actualHand;
+            }
+        }
+
         if (MatchManager.Singleton == null || !MatchManager.Singleton.IsMatchInProgress())
         {
             t = 0;
@@ -72,15 +85,18 @@ public class CardCountdown : NetworkBehaviour
 
     void GiveCard()
     {
+        PlayerHand target = PlayerHand.Local();
+        if (target == null) target = fillHand.playerHand;
+
         GameObject prefab = fillHand.deck.DrawCard();
         if (prefab == null) return;
 
-        for (int i = 0; i < fillHand.playerHand.hand.Length; i++)
-            if (fillHand.playerHand.hand[i] == null)
+        for (int i = 0; i < target.hand.Length; i++)
+            if (target.hand[i] == null)
             {
                 Card card = Instantiate(prefab).GetComponent<Card>();
                 card.prefabRef = prefab;
-                fillHand.playerHand.SetCard(i, card);
+                target.SetCard(i, card);
                 break;
             }
     }
