@@ -3,14 +3,23 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
+/// <summary>
+/// Deck builder screen: lists owned cards from CardInventory, lets the
+/// player add/remove copies to their Deck up to maxDeckSize, and reports
+/// the resulting deck size to the server via Hand for the ready-up check.
+/// </summary>
 public class DeckBuilderUI : MonoBehaviour
 {
     public GameObject rowPrefab;
     public Transform contentParent;
     public TMP_Text deckSizeText;
+
     private CardInventory inventory;
     private Deck deck;
     private Hand hand;
+
+    // Set whenever the deck is edited - DeckStation checks this on exit
+    // to decide whether to wipe the player's current hand.
     public static bool deckChanged;
 
     void OnEnable()
@@ -24,6 +33,8 @@ public class DeckBuilderUI : MonoBehaviour
         Refresh();
     }
 
+    // Trims the deck to match what's actually owned (in case inventory
+    // changed since the deck was last built) and to respect maxDeckSize.
     void ReconcileDeckWithInventory()
     {
         if (inventory == null || deck == null) return;

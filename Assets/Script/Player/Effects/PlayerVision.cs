@@ -2,6 +2,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
 
+/// <summary>
+/// Fades a full-screen overlay to black when the local player is blinded
+/// (see BlindBoltExplode), fading back out as the timer runs down.
+/// </summary>
 public class PlayerVision : NetworkBehaviour
 {
     public Image blindOverlay;
@@ -19,6 +23,8 @@ public class PlayerVision : NetworkBehaviour
     {
         if (!IsOwner) return;
 
+        // BlindOverlay lives in the HUD, which may not exist yet when this
+        // spawns, so keep retrying until it's found.
         if (blindOverlay == null)
         {
             retryTimer -= Time.deltaTime;
@@ -31,6 +37,8 @@ public class PlayerVision : NetworkBehaviour
             return;
         }
 
+        // Alpha directly tracks the remaining timer, so it fades out
+        // smoothly as the blind effect wears off.
         if (blindTimer > 0)
         {
             blindTimer -= Time.deltaTime;

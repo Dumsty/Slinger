@@ -1,5 +1,9 @@
 using UnityEngine;
 
+/// <summary>
+/// Top-level main menu navigation: switches between the title screen,
+/// settings, and duel (host/join) panels.
+/// </summary>
 public class MainMenu : MonoBehaviour
 {
     public GameObject mainMenuUI;
@@ -27,10 +31,10 @@ public class MainMenu : MonoBehaviour
 
     public void Quit()
     {
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
-    #else
+#else
         Application.Quit();
-    #endif
+#endif
     }
 }

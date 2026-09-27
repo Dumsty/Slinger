@@ -1,5 +1,8 @@
 using UnityEngine;
 
+/// <summary>
+/// Forces every card currently in hand to stay active every frame.
+/// </summary>
 public class HandUI : MonoBehaviour
 {
     public PlayerHand playerHand;

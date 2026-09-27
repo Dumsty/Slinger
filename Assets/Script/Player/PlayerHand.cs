@@ -1,10 +1,18 @@
 using UnityEngine;
 using Unity.Netcode;
 
+/// <summary>
+/// Holds the local player's hand of card GameObjects and lays them out in
+/// a fanned arc. Card data itself (hand[]) lives only on the owning
+/// client - it is not synced, so server-side code must go through
+/// ClearHand()/ClientRpc rather than touching hand[] directly.
+/// </summary>
 public class PlayerHand : NetworkBehaviour
 {
     public Card[] hand = new Card[7];
     public Transform handCenter;
+
+    [Header("Fan Layout")]
     public float cardSpacing = 0.15f;
     public float depthOffset = 0.02f;
     public float fanAngle = 10f;
@@ -26,6 +34,9 @@ public class PlayerHand : NetworkBehaviour
         Center();
     }
 
+    // deck is optional so a card can be silently destroyed instead of
+    // discarded back into the pool when that's not appropriate (rare) -
+    // pass it whenever possible so the card isn't lost from the deck.
     public void RemoveCard(int slot, Deck deck = null)
     {
         if (deck != null && hand[slot].prefabRef != null) deck.Discard(hand[slot].prefabRef);
@@ -34,6 +45,9 @@ public class PlayerHand : NetworkBehaviour
         Center();
     }
 
+    // hand[] only exists on the owning client, so the server can't clear
+    // it directly - this routes the request through a ClientRpc to
+    // whichever client actually owns this hand.
     public void ClearHand()
     {
         if (IsServer)
@@ -53,6 +67,8 @@ public class PlayerHand : NetworkBehaviour
                 RemoveCard(i, deck);
     }
 
+    // Repositions all occupied cards into a centered, fanned arc under
+    // handCenter based on the configured spacing/angle/arch curves.
     void Center()
     {
         Card[] cards = System.Array.FindAll(hand, c => c != null);
@@ -71,6 +87,8 @@ public class PlayerHand : NetworkBehaviour
         }
     }
 
+    // Re-runs the layout in the editor when curve/spacing values are
+    // tweaked in the Inspector during Play mode.
     void OnValidate()
     {
         if (Application.isPlaying) Center();

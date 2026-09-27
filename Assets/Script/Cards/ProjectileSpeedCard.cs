@@ -1,8 +1,15 @@
 using UnityEngine;
 
+/// <summary>
+/// Temporarily increases fired projectile launch force for a fixed
+/// duration when played.
+/// </summary>
 public class ProjectileSpeedCard : Card
 {
+    [Tooltip("Buff duration in seconds.")]
     public float duration = 10f;
+
+    [Tooltip("Added to projectile launch force while active.")]
     public float forceBonus = 15f;
 
     public override void Play()

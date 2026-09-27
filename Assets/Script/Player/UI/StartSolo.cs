@@ -2,6 +2,12 @@ using UnityEngine;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 
+/// <summary>
+/// Starts a local-only host session (127.0.0.1, no Relay) for solo
+/// practice. Waits for the game scene to actually finish loading before
+/// entering solo mode - calling EnterSoloMode() immediately after
+/// LoadScene() would run before MatchManager exists in the new scene.
+/// </summary>
 public class SoloMode : MonoBehaviour
 {
     public GameObject connectUI;

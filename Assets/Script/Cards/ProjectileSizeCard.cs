@@ -1,8 +1,15 @@
 using UnityEngine;
 
+/// <summary>
+/// Temporarily increases fired projectile size (and hitbox) for a fixed
+/// duration when played.
+/// </summary>
 public class ProjectileSizeCard : Card
 {
+    [Tooltip("Buff duration in seconds.")]
     public float duration = 10f;
+
+    [Tooltip("Added to projectile scale while active (0.5 = 50% bigger).")]
     public float sizeBonus = 0.5f;
 
     public override void Play()

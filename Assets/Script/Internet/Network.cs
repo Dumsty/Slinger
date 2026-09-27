@@ -6,6 +6,11 @@ using Unity.Services.Relay;
 using Unity.Services.Relay.Models;
 using Unity.Netcode.Transports.UTP;
 
+/// <summary>
+/// Handles Unity Relay + Netcode setup for hosting and joining a match
+/// from the main menu. Traffic is relayed through Unity's servers, so
+/// neither player ever sees the other's IP address.
+/// </summary>
 public class NetworkUI : MonoBehaviour
 {
     public TMPro.TMP_InputField joinCodeInput;
@@ -15,6 +20,8 @@ public class NetworkUI : MonoBehaviour
     public GameObject duelUI;
     public string gameSceneName = "Game";
 
+    // Stored here so it can be read later (e.g. displayed on the in-game
+    // pause menu) after this object's own UI has been hidden.
     public static string HostJoinCode = "";
 
     async void Start()
@@ -38,6 +45,9 @@ public class NetworkUI : MonoBehaviour
                 allocation.AllocationIdBytes, allocation.Key, allocation.ConnectionData);
 
             NetworkManager.Singleton.StartHost();
+
+            // Only the host/server triggers the scene load - Netcode's
+            // scene manager pulls any connected clients along with it.
             NetworkManager.Singleton.SceneManager.LoadScene(gameSceneName, UnityEngine.SceneManagement.LoadSceneMode.Single);
             CloseMenus();
         }
@@ -51,9 +61,6 @@ public class NetworkUI : MonoBehaviour
     {
         try
         {
-            Debug.Log($"Join() called. joinCodeInput={(joinCodeInput != null ? "OK" : "NULL")}, " +
-                    $"text='{(joinCodeInput != null ? joinCodeInput.text : "N/A")}'");
-
             JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(joinCodeInput.text);
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(
@@ -62,6 +69,8 @@ public class NetworkUI : MonoBehaviour
                 allocation.HostConnectionData);
 
             NetworkManager.Singleton.StartClient();
+            // No scene load here - the host's LoadScene call above brings
+            // this client along automatically once connected.
             CloseMenus();
         }
         catch (System.Exception e)

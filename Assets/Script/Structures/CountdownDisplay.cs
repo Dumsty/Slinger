@@ -1,6 +1,12 @@
 using UnityEngine;
 using TMPro;
 
+/// <summary>
+/// Shows the pre-match countdown number once both players are ready.
+/// Important: must live on a different, always-active object than label
+/// itself - if attached directly to the object it hides, that would stop
+/// this script's own Update() from ever running again.
+/// </summary>
 public class CountdownDisplay : MonoBehaviour
 {
     public TMP_Text label;

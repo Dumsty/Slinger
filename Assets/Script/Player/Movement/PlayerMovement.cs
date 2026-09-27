@@ -1,6 +1,12 @@
 using UnityEngine;
 using Unity.Netcode;
 
+/// <summary>
+/// First-person player movement: walking, sliding, crouching, jumping
+/// (with configurable extra air jumps), and slope handling. Horizontal
+/// movement is driven through Rigidbody velocity rather than MovePosition
+/// so wall collisions resolve smoothly instead of jittering.
+/// </summary>
 public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private float playerSpeed;
@@ -17,6 +23,8 @@ public class PlayerMovement : NetworkBehaviour
 
     public float airJumpForce = 5f;
     public int ExtraJumps;
+
+    // Buff bonuses applied/removed by cards (MoveSpeedCard, AirControlCard).
     public float SpeedBonus;
     public float AirControlBonus;
 
@@ -74,6 +82,9 @@ public class PlayerMovement : NetworkBehaviour
         if (Input.GetButtonDown("Jump")) HandleJump();
     }
 
+    // groundedGrace gives a short window after leaving the ground where
+    // jumps/landing logic still treat the player as grounded, smoothing
+    // over single-frame collision gaps (e.g. running over small bumps).
     private void UpdateGroundedState()
     {
         if (grounded) { groundedTimer = groundedGrace; airJumpsUsed = 0; }
@@ -93,6 +104,7 @@ public class PlayerMovement : NetworkBehaviour
         sliding = true;
         lastMove = Vector3.Lerp(lastMove, Vector3.zero, slideDrag * Time.fixedDeltaTime);
 
+        // Accelerate down slopes proportional to their steepness.
         if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hit, 1.5f))
         {
             float slopeAngle = Vector3.Angle(hit.normal, Vector3.up);
@@ -116,10 +128,15 @@ public class PlayerMovement : NetworkBehaviour
         float speedTarget = (wantsCrouch ? crouchSpeed : playerSpeed) + SpeedBonus;
         Vector3 targetVelocity = inputDir * speedTarget;
 
+        // Air acceleration ramps slower than ground by default; AirControlBonus
+        // reduces that ramp time while active.
         float ramp = effectivelyGrounded ? accelTime : Mathf.Max(0.05f, airAccelTime - AirControlBonus);
         currentVelocity = Vector3.MoveTowards(currentVelocity, targetVelocity, (playerSpeed / ramp) * Time.fixedDeltaTime);
 
         lastMove = currentVelocity;
+
+        // Set via velocity (not MovePosition) so wall collisions are
+        // resolved naturally by physics instead of causing jitter.
         rb.linearVelocity = new Vector3(lastMove.x, rb.linearVelocity.y, lastMove.z);
     }
 
@@ -137,6 +154,9 @@ public class PlayerMovement : NetworkBehaviour
         }
     }
 
+    // Teleports via the Rigidbody (not just transform.position) and clears
+    // velocity/momentum, otherwise the next physics step can silently undo
+    // a transform-only teleport.
     public void Teleport(Vector3 pos)
     {
         rb.position = pos;
@@ -146,6 +166,9 @@ public class PlayerMovement : NetworkBehaviour
         transform.position = pos;
     }
 
+    // Only counts as "grounded" if a contact's normal points mostly
+    // upward (i.e. standing on top of something) - prevents pressing
+    // against a wall from being treated as ground and resetting air jumps.
     void OnCollisionStay(Collision collision)
     {
         foreach (ContactPoint contact in collision.contacts)

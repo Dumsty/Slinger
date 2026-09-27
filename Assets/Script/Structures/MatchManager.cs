@@ -2,8 +2,22 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 
+/// <summary>
+/// Lobby - waiting to ready up (players can shop/move freely, no damage).
+/// Countdown - both players readied, 10s countdown before match starts.
+/// InProgress - actual 1v1 match, first to winScore kills wins.
+/// MatchOver - brief pause showing the winner before returning to Lobby.
+/// Solo - single-player practice mode; see soloPracticing for whether
+/// the player is actively practicing vs. still in the solo lobby.
+/// </summary>
 public enum MatchPhase { Lobby, Countdown, InProgress, MatchOver, Solo }
 
+/// <summary>
+/// Server-authoritative match state machine. Owns spawn point assignment,
+/// ready-up/countdown flow, scoring, win detection, and resetting players
+/// (position/health/buffs/hand) between rounds. All state lives in
+/// NetworkVariables so every client can read it directly for their own UI.
+/// </summary>
 public class MatchManager : NetworkBehaviour
 {
     public static MatchManager Singleton;
@@ -22,12 +36,17 @@ public class MatchManager : NetworkBehaviour
     public NetworkVariable<float> countdownRemaining = new NetworkVariable<float>(0f);
     public NetworkVariable<bool> isSoloMode = new NetworkVariable<bool>(false);
     public NetworkVariable<bool> soloPracticing = new NetworkVariable<bool>(false);
-    public NetworkVariable<int> winner = new NetworkVariable<int>(0);
+    public NetworkVariable<int> winner = new NetworkVariable<int>(0); // 0 = none, 1 = A, 2 = B
+
+    // clientA/clientB are the server's own working copies of who occupies
+    // each slot. clientAId/clientBId are the networked mirrors of the same
+    // values, so every client can independently determine "am I A or B?"
+    // (needed since clientA/clientB themselves are never synced).
+    private ulong clientA = ulong.MaxValue;
+    private ulong clientB = ulong.MaxValue;
     public NetworkVariable<ulong> clientAId = new NetworkVariable<ulong>(ulong.MaxValue);
     public NetworkVariable<ulong> clientBId = new NetworkVariable<ulong>(ulong.MaxValue);
 
-    private ulong clientA = ulong.MaxValue;
-    private ulong clientB = ulong.MaxValue;
     private Coroutine countdownRoutine;
 
     void Awake()
@@ -42,10 +61,15 @@ public class MatchManager : NetworkBehaviour
         NetworkManager.Singleton.OnClientConnectedCallback += OnClientConnected;
         NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnected;
 
+        // Catches the host's own connection, which happens before this
+        // object spawns and would otherwise never fire OnClientConnected.
         foreach (var clientId in NetworkManager.Singleton.ConnectedClientsIds)
             OnClientConnected(clientId);
     }
 
+    // Frees the disconnecting player's slot so a future connection can
+    // claim it, and drops an in-progress match back to Lobby since a 1v1
+    // can't continue with only one player.
     void OnClientDisconnected(ulong clientId)
     {
         if (clientId == clientA)
@@ -65,6 +89,8 @@ public class MatchManager : NetworkBehaviour
             phase.Value = MatchPhase.Lobby;
     }
 
+    // Assigns the first two connecting clients to slots A/B in order; any
+    // further connection attempt while both slots are full is ignored.
     void OnClientConnected(ulong clientId)
     {
         if (clientA == ulong.MaxValue)
@@ -96,6 +122,7 @@ public class MatchManager : NetworkBehaviour
         phase.Value = MatchPhase.Solo;
     }
 
+    // Used by Health/CardCountdown to gate damage and card drawing.
     public bool IsMatchInProgress()
     {
         if (isSoloMode.Value) return soloPracticing.Value;
@@ -109,6 +136,9 @@ public class MatchManager : NetworkBehaviour
         return false;
     }
 
+    // Called by ReadyToggle when the player presses R. Ready requests are
+    // rejected (with a message back to the requester) unless their deck
+    // is full, so both players always compete with an equal deck size.
     public void SetReady(ulong clientId, bool ready)
     {
         if (!IsServer) { SetReadyServerRpc(clientId, ready); return; }
@@ -135,6 +165,8 @@ public class MatchManager : NetworkBehaviour
             }
             else if (!ready && soloPracticing.Value)
             {
+                // Un-readying mid-practice sends the player back to the
+                // lobby, same cleanup as dying.
                 soloPracticing.Value = false;
                 TeleportPlayer(clientA, lobbySpawnPoint);
                 Health h = GetHealthForClient(clientA);
@@ -160,6 +192,8 @@ public class MatchManager : NetworkBehaviour
         ReadyToggle.ShowRejectionMessage(message);
     }
 
+    // Deck.deckList only exists on the owning client, so this checks the
+    // synced Hand.deckSize instead of reading the deck directly.
     bool HasFullDeck(ulong clientId)
     {
         if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return false;
@@ -171,6 +205,7 @@ public class MatchManager : NetworkBehaviour
         return hand.deckSize.Value >= hand.deck.maxDeckSize;
     }
 
+    // Solo has no countdown - readying up starts practice immediately.
     void StartSoloPractice()
     {
         soloPracticing.Value = true;
@@ -186,6 +221,8 @@ public class MatchManager : NetworkBehaviour
             countdownRoutine = StartCoroutine(RunCountdown());
     }
 
+    // Ticks the countdown down each frame; aborts back to Lobby if either
+    // player un-readies before it completes.
     IEnumerator RunCountdown()
     {
         phase.Value = MatchPhase.Countdown;
@@ -216,6 +253,9 @@ public class MatchManager : NetworkBehaviour
         ResetPositionsAndHealth();
     }
 
+    // Called by Health when a player's health hits zero. Solo deaths just
+    // send the player back to the lobby with no scoring; real matches
+    // credit the attacker and check for a win.
     public void ReportKill(ulong attackerId, ulong victimId)
     {
         if (!IsServer) return;
@@ -247,6 +287,8 @@ public class MatchManager : NetworkBehaviour
         }
     }
 
+    // Shows the winner for a few seconds, then resets both players and
+    // returns everyone to the lobby to ready up again.
     IEnumerator ReturnToLobbyAfterDelay(float delay)
     {
         yield return new WaitForSeconds(delay);
@@ -268,6 +310,9 @@ public class MatchManager : NetworkBehaviour
         ClearHandForClient(clientB);
     }
 
+    // Shared between "match just started" and "someone just got a kill" -
+    // teleports both players to their fixed spawn points and resets
+    // health/buffs/hand for a clean start to the round.
     void ResetPositionsAndHealth()
     {
         TeleportPlayer(clientA, spawnPointA);
@@ -291,6 +336,8 @@ public class MatchManager : NetworkBehaviour
         PlayerHand playerHand = client.PlayerObject.GetComponent<PlayerHand>();
         if (playerHand == null) return;
 
+        // PlayerHand.hand[] only exists on the owning client - ClearHand()
+        // routes this through a ClientRpc rather than touching it directly.
         playerHand.ClearHand();
     }
 
@@ -308,6 +355,9 @@ public class MatchManager : NetworkBehaviour
         return client.PlayerObject.GetComponent<Health>();
     }
 
+    // Unsubscribe from NetworkManager events on despawn so a destroyed
+    // MatchManager can't have a stale callback fire later (this caused a
+    // UI glitch on the host's return to the main menu before it was added).
     public override void OnNetworkDespawn()
     {
         if (NetworkManager.Singleton != null)

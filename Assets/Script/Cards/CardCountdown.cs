@@ -2,10 +2,19 @@ using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
 
+/// <summary>
+/// Runs the local player's card draw timer: fills a UI bar over time and
+/// deals a new card into their hand once it completes. Only draws while a
+/// match (or solo practice) is actually in progress.
+/// </summary>
 public class CardCountdown : NetworkBehaviour
 {
+    [Tooltip("Base time between card draws, in seconds.")]
     public float fillTime = 5f;
+
+    [Tooltip("Subtracted from fillTime while a draw-speed buff is active.")]
     public float DrawSpeedBonus;
+
     private Slider timerBar;
     private Hand fillHand;
     private float t;
@@ -24,6 +33,8 @@ public class CardCountdown : NetworkBehaviour
         if (!IsOwner) return;
         if (DeckStation.editingDeck) return;
 
+        // TimerBar lives in the HUD, which may not exist yet when this
+        // spawns, so keep retrying until it's found.
         if (timerBar == null)
         {
             GameObject obj = GameObject.Find("TimerBar");
@@ -31,6 +42,7 @@ public class CardCountdown : NetworkBehaviour
             return;
         }
 
+        // Same idea for Hand/PlayerHand/Deck - retry every 0.5s until resolved.
         if (fillHand == null || fillHand.playerHand == null || fillHand.deck == null)
         {
             retryTimer -= Time.deltaTime;
@@ -43,6 +55,9 @@ public class CardCountdown : NetworkBehaviour
             return;
         }
 
+        // Safety net: periodically re-check that the cached PlayerHand is
+        // still the real one, in case it was resolved to a stale/wrong
+        // instance during a timing race at match start.
         revalidateTimer -= Time.deltaTime;
         if (revalidateTimer <= 0)
         {
@@ -55,6 +70,7 @@ public class CardCountdown : NetworkBehaviour
             }
         }
 
+        // No drawing in the lobby or between rounds.
         if (MatchManager.Singleton == null || !MatchManager.Singleton.IsMatchInProgress())
         {
             t = 0;
@@ -85,6 +101,8 @@ public class CardCountdown : NetworkBehaviour
 
     void GiveCard()
     {
+        // Re-fetch the current hand rather than trusting the cached
+        // reference, so a stale fillHand can't cause a card to be lost.
         PlayerHand target = PlayerHand.Local();
         if (target == null) target = fillHand.playerHand;
 

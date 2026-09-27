@@ -1,8 +1,14 @@
 using UnityEngine;
 
+/// <summary>
+/// Temporarily increases the local player's move speed for a fixed duration.
+/// </summary>
 public class MoveSpeedCard : Card
 {
+    [Tooltip("Buff duration in seconds.")]
     public float duration = 10f;
+
+    [Tooltip("Move speed bonus while active.")]
     public float speedBonus = 3f;
 
     public override void Play()
@@ -16,6 +22,7 @@ public class MoveSpeedCard : Card
         if (!wasActive) pm.StartCoroutine(GrantSpeedBoost(pm, bm));
     }
 
+    // No PlayerMovement.Local() exists yet, so scan for the owned instance.
     PlayerMovement FindLocalPlayerMovement()
     {
         foreach (var p in FindObjectsByType<PlayerMovement>(FindObjectsSortMode.None))

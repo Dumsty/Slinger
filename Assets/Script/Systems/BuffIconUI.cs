@@ -1,6 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Displays one icon per active buff, each filled bottom-to-top to show
+/// remaining duration (drains as the buff runs out). Icons are created
+/// and destroyed on demand to match the current buff count.
+/// </summary>
 public class BuffIconUI : MonoBehaviour
 {
     public GameObject iconPrefab;
@@ -18,6 +23,7 @@ public class BuffIconUI : MonoBehaviour
 
         int buffCount = buffManager.activeBuffs.Count;
 
+        // Grow the icon list if there are more active buffs than icons.
         while (container.childCount < buffCount)
             Instantiate(iconPrefab, container);
 
@@ -35,6 +41,7 @@ public class BuffIconUI : MonoBehaviour
                 : 0;
         }
 
+        // Shrink back down if buffs expired since the last frame.
         if (container.childCount > buffCount)
         {
             for (int i = container.childCount - 1; i >= buffCount; i--)

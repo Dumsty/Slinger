@@ -2,6 +2,11 @@ using UnityEngine;
 using Unity.Netcode;
 using System.Collections;
 
+/// <summary>
+/// In-game pause menu: Escape opens/closes it, or - if the player is
+/// currently in the deck shop - closes the shop and opens pause instead,
+/// remembering to return to the shop (not gameplay) on resume.
+/// </summary>
 public class PauseMenu : MonoBehaviour
 {
     public GameObject pauseUI;
@@ -10,6 +15,8 @@ public class PauseMenu : MonoBehaviour
     public GameObject deckBuilderUI;
     public static bool paused;
 
+    // Tracks whether the current pause was triggered from inside the shop,
+    // so Resume() knows whether to return to gameplay or back to the shop.
     private bool pausedFromShop;
 
     void Update()
@@ -57,6 +64,8 @@ public class PauseMenu : MonoBehaviour
 
         if (pausedFromShop)
         {
+            // Re-open the shop instead of returning to normal gameplay -
+            // cursor stays unlocked/visible, matching shop state.
             pausedFromShop = false;
             if (deckBuilderUI != null) deckBuilderUI.SetActive(true);
             DeckStation.editingDeck = true;
@@ -86,6 +95,10 @@ public class PauseMenu : MonoBehaviour
         StartCoroutine(ShutdownAndReturnToMenu());
     }
 
+    // Waits for NetworkManager.Shutdown() to fully complete before loading
+    // the menu scene - loading immediately after calling Shutdown() can
+    // race with Netcode still tearing down the old scene's network
+    // objects, causing the two scenes' UI to briefly overlap.
     IEnumerator ShutdownAndReturnToMenu()
     {
         if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)

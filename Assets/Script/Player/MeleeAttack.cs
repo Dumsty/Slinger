@@ -2,6 +2,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using Unity.Netcode;
 
+/// <summary>
+/// Local player's melee attack: a short-range raycast hit with a cooldown,
+/// triggered by F. Not networked/RPC'd - damage is applied directly via
+/// Health.TakeDamage, which handles server-authoritative validation itself.
+/// </summary>
 public class MeleeAttack : NetworkBehaviour
 {
     public float range = 2f;
@@ -9,6 +14,7 @@ public class MeleeAttack : NetworkBehaviour
     public float cooldown = 0.5f;
     public AudioClip meleeSound;
     public float volume = 1f;
+
     private AudioSource audioSource;
     private float cooldownTimer;
     private Slider cooldownBar;
@@ -22,6 +28,8 @@ public class MeleeAttack : NetworkBehaviour
     {
         if (!IsOwner) return;
 
+        // MeleeCooldownBar lives in the HUD, which may not exist yet when
+        // this spawns, so keep trying to find it each frame until it does.
         if (cooldownBar == null)
         {
             GameObject obj = GameObject.Find("MeleeCooldownBar");

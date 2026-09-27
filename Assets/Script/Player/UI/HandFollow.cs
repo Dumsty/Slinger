@@ -1,5 +1,10 @@
 using UnityEngine;
 
+/// <summary>
+/// Smoothly follows an offset position/rotation relative to the camera -
+/// used to keep the player's hand of cards positioned in view as they look
+/// around (see the "Cards" object under the player prefab).
+/// </summary>
 public class HandFollow : MonoBehaviour
 {
     public Transform cam;

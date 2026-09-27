@@ -1,8 +1,14 @@
 using UnityEngine;
 
+/// <summary>
+/// Reduces the time between card draws for a fixed duration when played.
+/// </summary>
 public class DrawSpeedCard : Card
 {
+    [Tooltip("Buff duration in seconds.")]
     public float duration = 10f;
+
+    [Tooltip("Subtracted from the base draw fill time while active.")]
     public float speedBonus = 2f;
 
     public override void Play()

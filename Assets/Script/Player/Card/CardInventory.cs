@@ -2,6 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 using Unity.Netcode;
 
+/// <summary>
+/// A single card type and how many copies the player owns.
+/// </summary>
 [System.Serializable]
 public class InventoryEntry
 {
@@ -9,36 +12,19 @@ public class InventoryEntry
     public int quantity;
 }
 
+/// <summary>
+/// Holds the local player's owned cards - source of truth for what the
+/// deck builder shows and what can be added to a deck.
+/// </summary>
 public class CardInventory : NetworkBehaviour
 {
     public List<InventoryEntry> entries = new();
 
-    public override void OnNetworkSpawn()
-    {
-        Debug.Log($"[CardInventory] Spawned on {gameObject.name}, " +
-                  $"NetworkObjectId={NetworkObjectId}, OwnerClientId={OwnerClientId}, " +
-                  $"IsOwner={IsOwner}, IsServer={IsServer}, entries.Count={entries.Count}");
-    }
-
     public static CardInventory Local()
     {
-        CardInventory result = null;
-        int candidateCount = 0;
-
         foreach (var inv in FindObjectsByType<CardInventory>(FindObjectsSortMode.None))
-        {
-            candidateCount++;
-            Debug.Log($"[CardInventory.Local] Candidate {inv.gameObject.name}: " +
-                      $"OwnerClientId={inv.OwnerClientId}, IsOwner={inv.IsOwner}, entries.Count={inv.entries.Count}");
-
-            if (inv.IsOwner && result == null)
-                result = inv;
-        }
-
-        Debug.Log($"[CardInventory.Local] Found {candidateCount} CardInventory instance(s) in scene. " +
-                  $"Selected: {(result != null ? result.gameObject.name : "NULL")}");
-
-        return result;
+            if (inv.IsOwner) return inv;
+        return null;
     }
 
     public int GetQuantity(GameObject prefab)

@@ -1,7 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// Makes the local player invisible to other players for a fixed duration.
+/// Playing cards is blocked while invisible (see SelectCard).
+/// </summary>
 public class InvisibilityCard : Card
 {
+    [Tooltip("Buff duration in seconds.")]
     public float duration = 8f;
 
     public override void Play()
@@ -15,6 +20,7 @@ public class InvisibilityCard : Card
         if (!wasActive) inv.StartCoroutine(GrantInvisibility(inv, bm));
     }
 
+    // No PlayerInvisibility.Local() exists yet, so scan for the owned instance.
     PlayerInvisibility FindLocalInvisibility()
     {
         foreach (var p in FindObjectsByType<PlayerInvisibility>(FindObjectsSortMode.None))

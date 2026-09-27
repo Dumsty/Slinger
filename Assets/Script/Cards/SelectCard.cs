@@ -1,6 +1,11 @@
 using UnityEngine;
 using Unity.Netcode;
 
+/// <summary>
+/// Handles selecting and playing cards from the local player's hand:
+/// number-key and scroll-wheel selection, visual fan layout, and playing
+/// the active card on left click.
+/// </summary>
 public class SelectCard : NetworkBehaviour
 {
     private const int HandSize = 7;
@@ -8,11 +13,16 @@ public class SelectCard : NetworkBehaviour
     public PlayerHand playerHand;
     private Deck deck;
     private PlayerInvisibility invisibility;
+
+    // Index into playerHand.hand of the currently selected card, or -1 if none.
     public int activeSlot = -1;
 
     void Update()
     {
         if (!IsOwner) return;
+
+        // Lazily resolve dependencies - these may not exist yet on the
+        // frame this object spawns.
         if (playerHand == null) { playerHand = PlayerHand.Local(); return; }
         if (deck == null)
         {
@@ -21,6 +31,7 @@ public class SelectCard : NetworkBehaviour
             return;
         }
         if (invisibility == null) invisibility = GetComponent<PlayerInvisibility>();
+
         if (PauseMenu.paused) return;
         if (DeckStation.editingDeck) return;
 
@@ -54,6 +65,8 @@ public class SelectCard : NetworkBehaviour
         return -1;
     }
 
+    // Number keys select by visual position among occupied slots (e.g. "2"
+    // selects the second card currently in hand), not by raw slot index.
     private void HandleNumberKeySelection()
     {
         for (int i = 0; i < HandSize; i++)
@@ -73,6 +86,9 @@ public class SelectCard : NetworkBehaviour
         }
     }
 
+    // Scrolls to the next occupied slot in either direction, wrapping
+    // around, and bounded to at most HandSize steps so it can never loop
+    // forever even if activeSlot starts at -1 or the hand is empty.
     private void HandleScrollSelection()
     {
         float scroll = Input.GetAxis("Mouse ScrollWheel");
@@ -92,6 +108,8 @@ public class SelectCard : NetworkBehaviour
         }
     }
 
+    // Arranges occupied cards in a fanned arc, raising and pulling the
+    // active card slightly forward/up so it's visually distinct.
     private void LayoutHand()
     {
         Card[] active = System.Array.FindAll(playerHand.hand, c => c != null);
@@ -113,6 +131,9 @@ public class SelectCard : NetworkBehaviour
         }
     }
 
+    // Plays the active card on left click, then re-selects a neighboring
+    // occupied slot (preferring left) so selection doesn't jump to -1
+    // unnecessarily. Blocked entirely while invisible.
     private void HandlePlayInput()
     {
         if (!Input.GetMouseButtonDown(0)) return;

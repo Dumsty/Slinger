@@ -1,6 +1,11 @@
 using UnityEngine;
 using Unity.Netcode;
 
+/// <summary>
+/// Trigger zone for the deck builder: opens the shop UI on entry, closes
+/// it and wipes the player's hand on exit if the deck was changed while
+/// inside - forcing a fresh hand drawn from the newly edited deck.
+/// </summary>
 public class DeckStation : MonoBehaviour
 {
     public GameObject deckBuilderUI;
@@ -26,6 +31,9 @@ public class DeckStation : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
+        // Any deck edit (even a no-op add/remove) forces a hand wipe -
+        // intentional, so the player never holds cards that don't match
+        // their current deck.
         if (DeckBuilderUI.deckChanged)
         {
             Hand h = Hand.Local();

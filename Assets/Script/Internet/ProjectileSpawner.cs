@@ -1,16 +1,26 @@
 using UnityEngine;
 using Unity.Netcode;
 
+/// <summary>
+/// Server-authoritative spawner for all player-fired projectiles.
+/// Client cards call the public Fire* methods; actual spawning happens
+/// via ServerRpc so the server stays authoritative over damage/effects.
+/// </summary>
 public class ProjectileSpawner : NetworkBehaviour
 {
     public GameObject fireballPrefab;
     public GameObject blindBoltPrefab;
+
+    // Temporary bonuses applied by buff cards (ProjectileSpeedCard, etc.).
     public float ProjectileForceBonus;
     public float ProjectileSizeBonus;
+
     private Collider[] ownerColliders;
 
     public override void OnNetworkSpawn()
     {
+        // Collect every collider on the owning player so projectiles can
+        // be told to ignore all of them, not just one.
         ownerColliders = GetComponentsInChildren<Collider>();
         if (ownerColliders.Length == 0)
         {
@@ -26,6 +36,8 @@ public class ProjectileSpawner : NetworkBehaviour
         return null;
     }
 
+    // Ensures a freshly spawned projectile can never collide with the
+    // player who fired it, regardless of how many colliders either side has.
     private void IgnoreOwnerCollisions(GameObject projectile)
     {
         if (ownerColliders == null) return;
@@ -63,6 +75,8 @@ public class ProjectileSpawner : NetworkBehaviour
         rb.useGravity = false;
         IgnoreOwnerCollisions(ball);
 
+        // Spawn before applying force so the NetworkObject exists on all
+        // clients with its correct starting position/scale first.
         ball.GetComponent<NetworkObject>().Spawn();
         rb.AddForce(direction * force, ForceMode.Impulse);
     }
@@ -102,6 +116,9 @@ public class ProjectileSpawner : NetworkBehaviour
         FireLightningServerRpc(origin, end);
     }
 
+    // Lightning damage is resolved locally on the caster via raycast
+    // (see LightningCard) - this RPC only exists to broadcast the visual
+    // bolt to every client.
     [ServerRpc]
     void FireLightningServerRpc(Vector3 origin, Vector3 end)
     {
