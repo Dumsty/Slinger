@@ -35,6 +35,8 @@ public class NetworkUI : MonoBehaviour
     {
         try
         {
+            await EnsureCleanNetworkState();
+
             Allocation allocation = await RelayService.Instance.CreateAllocationAsync(2);
             string joinCode = await RelayService.Instance.GetJoinCodeAsync(allocation.AllocationId);
             HostJoinCode = joinCode;
@@ -61,6 +63,8 @@ public class NetworkUI : MonoBehaviour
     {
         try
         {
+            await EnsureCleanNetworkState();
+
             JoinAllocation allocation = await RelayService.Instance.JoinAllocationAsync(joinCodeInput.text);
 
             NetworkManager.Singleton.GetComponent<UnityTransport>().SetRelayServerData(
@@ -76,6 +80,22 @@ public class NetworkUI : MonoBehaviour
         catch (System.Exception e)
         {
             ShowError("Failed to join: " + e.Message);
+        }
+    }
+
+    // Guards against "Can't start while listening" - if NetworkManager is
+    // still listening from a previous session (e.g. a prior solo/duel that
+    // didn't shut down cleanly), StartHost()/StartClient() silently no-op
+    // with just a console warning instead of throwing, which left stale
+    // player/match state behind on intermittent occasions. Forcing a clean
+    // shutdown first guarantees Host()/Join() always start fresh.
+    async System.Threading.Tasks.Task EnsureCleanNetworkState()
+    {
+        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        {
+            NetworkManager.Singleton.Shutdown();
+            while (NetworkManager.Singleton.ShutdownInProgress)
+                await System.Threading.Tasks.Task.Yield();
         }
     }
 
