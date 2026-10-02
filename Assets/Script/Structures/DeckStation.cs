@@ -30,19 +30,6 @@ public class DeckStation : MonoBehaviour
         editingDeck = false;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-
-        // Any deck edit (even a no-op add/remove) forces a hand wipe -
-        // intentional, so the player never holds cards that don't match
-        // their current deck.
-        if (DeckBuilderUI.deckChanged)
-        {
-            Hand h = Hand.Local();
-            if (h != null && h.deck != null)
-            {
-                StripHand(h);
-                h.deck.RebuildFresh();
-            }
-        }
     }
 
     private bool IsLocalPlayer(Collider other)

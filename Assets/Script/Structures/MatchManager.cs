@@ -209,6 +209,7 @@ public class MatchManager : NetworkBehaviour
     void StartSoloPractice()
     {
         soloPracticing.Value = true;
+        RebuildDeckForClient(clientA);
         TeleportPlayer(clientA, spawnPointA);
         Health h = GetHealthForClient(clientA);
         if (h != null) h.ResetHealth();
@@ -250,7 +251,20 @@ public class MatchManager : NetworkBehaviour
         scoreB.Value = 0;
         winner.Value = 0;
         phase.Value = MatchPhase.InProgress;
+        RebuildDeckForClient(clientA);
+        RebuildDeckForClient(clientB);
         ResetPositionsAndHealth();
+    }
+
+    void RebuildDeckForClient(ulong clientId)
+    {
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
+        if (client.PlayerObject == null) return;
+
+        Hand hand = client.PlayerObject.GetComponent<Hand>();
+        if (hand == null || hand.deck == null) return;
+
+        hand.deck.RequestRebuild();
     }
 
     // Called by Health when a player's health hits zero. Solo deaths just
