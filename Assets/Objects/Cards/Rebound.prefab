@@ -287,6 +287,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
+  cardName: Fight or Flight
+  description: Gain <b>increased move speed</b> for <b>30s</b> whenever you take
+    damage.
   duration: 30
   speedBonus: 7
   boostDuration: 5

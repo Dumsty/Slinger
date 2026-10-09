@@ -79,8 +79,12 @@ public class DeckBuilderUI : MonoBehaviour
             GameObject row = Instantiate(rowPrefab, contentParent);
             int inDeck = deck.deckList.FindAll(c => c == entry.cardPrefab).Count;
 
-            row.transform.Find("Name").GetComponent<TMP_Text>().text = entry.cardPrefab.name;
+            var card = entry.cardPrefab.GetComponent<Card>();
+            row.transform.Find("Name").GetComponent<TMP_Text>().text = card != null ? card.DisplayName : entry.cardPrefab.name;
             row.transform.Find("Count").GetComponent<TMP_Text>().text = inDeck + " / " + entry.quantity;
+
+            var hover = row.GetComponent<CardHoverTooltip>();
+            if (hover != null) hover.card = card;
 
             Button addBtn = row.transform.Find("AddButton").GetComponent<Button>();
             Button removeBtn = row.transform.Find("RemoveButton").GetComponent<Button>();

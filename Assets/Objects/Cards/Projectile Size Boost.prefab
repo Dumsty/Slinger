@@ -287,5 +287,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
+  cardName: Titanic Casting
+  description: Increase your <b>projectile size</b> for <b>10s</b>.
   duration: 10
   sizeBonus: 2

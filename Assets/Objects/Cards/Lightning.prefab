@@ -106,6 +106,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LightningCard
   icon: {fileID: 0}
   prefabRef: {fileID: 0}
+  cardName: Thunderbolt
+  description: Fire a bolt of lightning that instantly hits for <color=#FF4444>10
+    damage</color>.
   range: 50
   boltPrefabRef: {fileID: -2460984814110553588, guid: 817b895a8ba42ac459db3b71d0fc6781, type: 3}
   boltDuration: 1

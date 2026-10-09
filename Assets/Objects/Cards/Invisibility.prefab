@@ -106,6 +106,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InvisibilityCard
   icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
+  cardName: Shadow Walk
+  description: Become <b>invisible</b> to your opponent for <b>3s</b>. <color=#B84A00>You
+    cannot play cards while invisible.</color>
   duration: 3
 --- !u!1 &6653559487940277562
 GameObject:
