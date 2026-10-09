@@ -106,6 +106,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DamageCard
   icon: {fileID: 0}
   prefabRef: {fileID: 0}
+  cardName: Life Tap
+  description: Drain <color=#FF4444>10 health</color> from yourself.
   damage: 10
 --- !u!1 &6888268235193678079
 GameObject:

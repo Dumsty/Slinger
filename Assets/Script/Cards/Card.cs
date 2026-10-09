@@ -13,5 +13,12 @@ public abstract class Card : MonoBehaviour
     // can be discarded back into the deck's pool when removed from hand.
     [HideInInspector] public GameObject prefabRef;
 
+    [Header("Display")]
+    public string cardName;
+    [TextArea(2, 5)] public string description;
+
+    // Falls back to the object name if cardName is left blank
+    public string DisplayName => string.IsNullOrEmpty(cardName) ? gameObject.name : cardName;
+
     public abstract void Play();
 }

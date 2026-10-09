@@ -287,4 +287,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlindBoltCard
   icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
+  cardName: Bolt of Night
+  description: Fire a bolt that <b>blinds</b> the hit enemy for a short duration.
   force: 20

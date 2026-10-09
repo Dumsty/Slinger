@@ -106,7 +106,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: '::'
   icon: {fileID: 21300000, guid: 25387572d6614c84fa1c7f2e5c18ccfe, type: 3}
   prefabRef: {fileID: 0}
-  duration: 10
+  cardName: Vanish
+  description: Taking a <b>20+ damage</b> hit within <b>30s</b> turns you <b>invisible</b>
+    for <b>1s</b>.
+  duration: 30
   damageThreshold: 20
   invisDuration: 1
 --- !u!1 &6405185264600222945

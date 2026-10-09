@@ -106,7 +106,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::HealCard
   icon: {fileID: 0}
   prefabRef: {fileID: 0}
-  playerHealth: {fileID: 0}
+  cardName: Restoration
+  description: Restore <color=#55DD77>10 health</color>.
+  healAmount: 10
 --- !u!1 &3552336625985018564
 GameObject:
   m_ObjectHideFlags: 0

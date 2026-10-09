@@ -287,5 +287,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FireballCard
   icon: {fileID: 0}
   prefabRef: {fileID: 0}
+  cardName: Ignis Orb
+  description: Launch a fireball that explodes on impact, dealing <color=#FF4444>25
+    damage</color>.
   force: 40
   damage: 25
