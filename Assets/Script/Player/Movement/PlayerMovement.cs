@@ -54,7 +54,7 @@ public class PlayerMovement : NetworkBehaviour
 
         UpdateGroundedState();
         bool effectivelyGrounded = groundedTimer > 0;
-        bool wantsCrouch = Input.GetKey(KeyCode.C) && effectivelyGrounded;
+        bool wantsCrouch = !UITyping.IsTyping && Input.GetKey(KeyCode.C) && effectivelyGrounded;
         Crouching = wantsCrouch;
 
         Vector3 inputDir = GetCameraRelativeInput();
@@ -78,6 +78,7 @@ public class PlayerMovement : NetworkBehaviour
     {
         if (!IsOwner) return;
         if (PauseMenu.paused) return;
+        if (UITyping.IsTyping) return;
 
         if (Input.GetButtonDown("Jump")) HandleJump();
     }
@@ -93,6 +94,8 @@ public class PlayerMovement : NetworkBehaviour
 
     private Vector3 GetCameraRelativeInput()
     {
+        if (UITyping.IsTyping) return Vector3.zero;
+
         Vector3 dir = Camera.main.transform.TransformDirection(
             new Vector3(Input.GetAxisRaw("Horizontal"), 0, Input.GetAxisRaw("Vertical")));
         dir.y = 0;
