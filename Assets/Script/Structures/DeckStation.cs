@@ -2,9 +2,9 @@ using UnityEngine;
 using Unity.Netcode;
 
 /// <summary>
-/// Trigger zone for the deck builder: opens the shop UI on entry, closes
-/// it and wipes the player's hand on exit if the deck was changed while
-/// inside - forcing a fresh hand drawn from the newly edited deck.
+/// Trigger zone for the deck builder: opens the shop UI on entry and closes
+/// it on exit. UI activation is deferred to Update() because disabling a
+/// TMP_InputField inside a physics callback (OnTriggerExit) throws.
 /// </summary>
 public class DeckStation : MonoBehaviour
 {
@@ -12,11 +12,13 @@ public class DeckStation : MonoBehaviour
     public GameObject hud;
     public static bool editingDeck;
 
+    // What the player's position says the shop should be (applied in Update)
+    private bool wantOpen;
+
     void OnTriggerEnter(Collider other)
     {
         if (!IsLocalPlayer(other)) return;
-        deckBuilderUI.SetActive(true);
-        if (hud != null) hud.SetActive(false);
+        wantOpen = true;
         editingDeck = true;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -25,11 +27,28 @@ public class DeckStation : MonoBehaviour
     void OnTriggerExit(Collider other)
     {
         if (!IsLocalPlayer(other)) return;
-        deckBuilderUI.SetActive(false);
-        if (hud != null) hud.SetActive(true);
+        wantOpen = false;
         editingDeck = false;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    // Applies the open/closed state outside the physics callback.
+    void Update()
+    {
+        if (deckBuilderUI != null && deckBuilderUI.activeSelf != wantOpen)
+            deckBuilderUI.SetActive(wantOpen);
+
+        if (hud != null && hud.activeSelf == wantOpen)
+            hud.SetActive(!wantOpen);
+    }
+
+    // Safety: if the station is disabled/destroyed while the player is inside
+    // (scene change, match reset), don't leave the static flag stuck on.
+    void OnDisable()
+    {
+        if (wantOpen) editingDeck = false;
+        wantOpen = false;
     }
 
     private bool IsLocalPlayer(Collider other)
