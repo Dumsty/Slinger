@@ -29,6 +29,8 @@ public class PlayerMovement : NetworkBehaviour
     public float AirControlBonus;
 
     public bool Crouching { get; private set; }
+    public bool IsGrounded => grounded;
+    public bool IsSliding => sliding;
 
     private Rigidbody rb;
     private bool grounded;

@@ -79,6 +79,7 @@ GameObject:
   - component: {fileID: -7240564318224414550}
   - component: {fileID: -4486597432313421687}
   - component: {fileID: 6631994223768539301}
+  - component: {fileID: 4561738114114459898}
   m_Layer: 0
   m_Name: Player 1
   m_TagString: Untagged
@@ -727,6 +728,32 @@ MonoBehaviour:
   playerRenderer: {fileID: 0}
   flashColor: {r: 1, g: 0, b: 0, a: 1}
   flashDuration: 0.15
+--- !u!114 &4561738114114459898
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1794816818876748870}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 79c088e04c1722b4ebf66876b4c8d84a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FootstepAudio
+  ShowTopMostFoldoutHeaderGroup: 1
+  walkLoop: {fileID: 8300000, guid: 3f9f464bda2d299469f8c9738026b757, type: 3}
+  volume: 0.1
+  minDistance: 2
+  maxDistance: 30
+  fadeInTime: 0.08
+  fadeOutTime: 0.12
+  moveThreshold: 0.5
+  referenceSpeed: 6
+  surfaceTag: Grass
+  groundCheckDistance: 1.5
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!1 &2662384203752171995
 GameObject:
   m_ObjectHideFlags: 0
