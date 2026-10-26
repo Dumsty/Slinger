@@ -21,11 +21,28 @@ public class CardCountdown : NetworkBehaviour
     private float retryTimer;
     private float revalidateTimer;
 
+    [Header("Audio")]
+    public AudioClip drawSound;
+    [Range(0f, 1f)] public float drawVolume = 1f;
+
+    private AudioSource audioSource;
+
     public static CardCountdown Local()
     {
         foreach (var cc in FindObjectsByType<CardCountdown>(FindObjectsSortMode.None))
             if (cc.IsOwner) return cc;
         return null;
+    }
+
+    void Awake()
+    {
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            audioSource = gameObject.AddComponent<AudioSource>();
+            audioSource.playOnAwake = false;
+            audioSource.spatialBlend = 0f;   // 2D - full volume regardless of position
+        }
     }
 
     void Update()
@@ -99,6 +116,7 @@ public class CardCountdown : NetworkBehaviour
         }
     }
 
+
     void GiveCard()
     {
         // Re-fetch the current hand rather than trusting the cached
@@ -109,13 +127,16 @@ public class CardCountdown : NetworkBehaviour
         GameObject prefab = fillHand.deck.DrawCard();
         if (prefab == null) return;
 
-        for (int i = 0; i < target.hand.Length; i++)
-            if (target.hand[i] == null)
-            {
-                Card card = Instantiate(prefab).GetComponent<Card>();
-                card.prefabRef = prefab;
-                target.SetCard(i, card);
-                break;
-            }
+    for (int i = 0; i < target.hand.Length; i++)
+        if (target.hand[i] == null)
+        {
+            Card card = Instantiate(prefab).GetComponent<Card>();
+            card.prefabRef = prefab;
+            target.SetCard(i, card);
+
+            if (audioSource != null && drawSound != null)
+                audioSource.PlayOneShot(drawSound, drawVolume);
+            break;
+        }
     }
 }

@@ -44,6 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3896682134b49df4ca4ded5f1e73ef26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Deck
+  ShowTopMostFoldoutHeaderGroup: 1
   maxDeckSize: 15
   deckList: []
 --- !u!1 &1794816818876748870
@@ -489,6 +490,8 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   fillTime: 2
   DrawSpeedBonus: 0
+  drawSound: {fileID: 8300000, guid: 5e75d6cc562682d43afac08f7fd74e69, type: 3}
+  drawVolume: 1
 --- !u!114 &1658312568508804694
 MonoBehaviour:
   m_ObjectHideFlags: 0
