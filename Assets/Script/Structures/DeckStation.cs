@@ -14,6 +14,7 @@ public class DeckStation : MonoBehaviour
 
     // What the player's position says the shop should be (applied in Update)
     private bool wantOpen;
+    private bool lastApplied;
 
     void OnTriggerEnter(Collider other)
     {
@@ -36,11 +37,11 @@ public class DeckStation : MonoBehaviour
     // Applies the open/closed state outside the physics callback.
     void Update()
     {
-        if (deckBuilderUI != null && deckBuilderUI.activeSelf != wantOpen)
-            deckBuilderUI.SetActive(wantOpen);
+        if (lastApplied == wantOpen) return;   // nothing changed, leave the UI alone
+        lastApplied = wantOpen;
 
-        if (hud != null && hud.activeSelf == wantOpen)
-            hud.SetActive(!wantOpen);
+        if (deckBuilderUI != null) deckBuilderUI.SetActive(wantOpen);
+        if (hud != null) hud.SetActive(!wantOpen);
     }
 
     // Safety: if the station is disabled/destroyed while the player is inside
