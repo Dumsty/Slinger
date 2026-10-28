@@ -57,7 +57,12 @@ public class ProjectileSpawner : NetworkBehaviour
     void SpawnFireballServerRpc(Vector3 position, Vector3 direction, float force, float damage, float scale)
     {
         Vector3 spawnPos = position + direction * 1.5f;
-        GameObject ball = Instantiate(fireballPrefab, spawnPos, Quaternion.identity);
+
+        Quaternion rot = direction.sqrMagnitude > 0.0001f
+            ? Quaternion.LookRotation(direction.normalized)
+            : Quaternion.identity;
+
+        GameObject ball = Instantiate(fireballPrefab, spawnPos, rot);
         ball.transform.localScale *= scale;
 
         FireBallExplode explode = ball.GetComponent<FireBallExplode>();
