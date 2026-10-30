@@ -110,8 +110,9 @@ MonoBehaviour:
   description: Fire a bolt of lightning that instantly hits for <color=#FF4444>10
     damage</color>.
   range: 50
-  boltPrefabRef: {fileID: -2460984814110553588, guid: 817b895a8ba42ac459db3b71d0fc6781, type: 3}
-  boltDuration: 1
+  boltPrefabRef: {fileID: 5497819611587108505, guid: 817b895a8ba42ac459db3b71d0fc6781, type: 3}
+  impactPrefabRef: {fileID: 8889541663368264227, guid: a8714000a31f9034489e84b5a1d141e6, type: 3}
+  boltDuration: 0.2
   originOffset: {x: 0, y: -0.2, z: 0.7}
   damage: 10
 --- !u!1 &7525022849985496348
