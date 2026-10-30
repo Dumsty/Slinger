@@ -12,12 +12,16 @@ public class LightningCard : Card
     public float range = 50f;
 
     // Shared across all LightningCard instances so the static SpawnVisual
-    // method can instantiate the bolt prefab without an instance reference.
-    public static LineRenderer boltPrefab;
+    // method can instantiate the prefabs without an instance reference.
+    public static GameObject boltPrefab;
+    public static GameObject impactPrefab;          // ADDED
     private static float sharedBoltDuration;
 
-    [Tooltip("Bolt visual prefab, assigned per-card in the Inspector.")]
-    public LineRenderer boltPrefabRef;
+    [Tooltip("Bolt visual prefab (LineRenderer may be on the root or a child).")]
+    public GameObject boltPrefabRef;
+
+    [Tooltip("Effect spawned where the bolt lands.")]
+    public GameObject impactPrefabRef;              // ADDED
 
     [Tooltip("How long the bolt visual stays on screen.")]
     public float boltDuration = 0.1f;
@@ -31,6 +35,7 @@ public class LightningCard : Card
     void Awake()
     {
         boltPrefab = boltPrefabRef;
+        impactPrefab = impactPrefabRef;             // ADDED
         sharedBoltDuration = boltDuration;
     }
 
@@ -63,9 +68,31 @@ public class LightningCard : Card
     // the bolt, then destroys itself after sharedBoltDuration.
     public static void SpawnVisual(Vector3 origin, Vector3 endPoint)
     {
-        LineRenderer bolt = Instantiate(boltPrefab);
-        bolt.SetPosition(0, origin);
-        bolt.SetPosition(1, endPoint);
-        Object.Destroy(bolt.gameObject, sharedBoltDuration);
+        if (boltPrefab == null) return;
+
+        // Spawn at the origin so any child particles/light/audio on the
+        // prefab land at the caster's end of the bolt.
+        GameObject bolt = Instantiate(boltPrefab, origin, Quaternion.LookRotation(
+            (endPoint - origin).sqrMagnitude > 0.0001f
+                ? (endPoint - origin).normalized
+                : Vector3.forward));
+
+        // The LineRenderer may sit on the root or on a child of the prefab.
+        LineRenderer line = bolt.GetComponentInChildren<LineRenderer>();
+        if (line != null)
+        {
+            line.useWorldSpace = true;      // positions below are world-space
+            line.positionCount = 2;
+            line.SetPosition(0, origin);
+            line.SetPosition(1, endPoint);
+        }
+        else
+        {
+            Debug.LogWarning("LightningCard: bolt prefab has no LineRenderer.");
+        }
+
+        Object.Destroy(bolt, sharedBoltDuration);
+
+        ImpactEffect.Play(impactPrefab, endPoint);  // ADDED
     }
 }

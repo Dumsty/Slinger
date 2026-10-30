@@ -201,7 +201,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 1676962927
+  GlobalObjectIdHash: 3095690555
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
@@ -658,33 +658,33 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   entries:
   - cardPrefab: {fileID: 3963593062026595454, guid: e797ac9a89d4b744c82eec003618c25c, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 8891878640703740647, guid: fe8f6396d7813084ca961b38f35a63d8, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 8957012819887143872, guid: fc0796772baaebb48b356d47669ded56, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 1958137326919396737, guid: 5b0eb6c332c48af45b452ee5046e78f3, type: 3}
-    quantity: 1
+    quantity: 15
   - cardPrefab: {fileID: 4058838517813604099, guid: 6b2c65cb0d85f8f4280d4581934ae41f, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 7075466940636960410, guid: 65cca29ad1f847a4991384344f4da63b, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 8442890205547704302, guid: 11e6a9680ad2a1740918a87d0b3a65e6, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 5154692909497825127, guid: 07363739b7f7279489a970468fe51344, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 4063002085084203079, guid: f5fb5f611d169284c9e6235b41b8b6e4, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 5665038658319888974, guid: 09e7b70b72b97ba42949f8e4279e7d45, type: 3}
-    quantity: 2
+    quantity: 15
   - cardPrefab: {fileID: 3127387534153793472, guid: 68ff79cfa5801204a9a194bb7270b50f, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 4606621712353167337, guid: ae3ed17047d62a149a3341be65db2023, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 5227617718804678977, guid: bbc67fde71421de43ad6e454acc0c0de, type: 3}
-    quantity: 5
+    quantity: 15
   - cardPrefab: {fileID: 2567685348319194931, guid: 4ee709b82afad4542b31c0e3d9e2e0b8, type: 3}
-    quantity: 5
+    quantity: 15
 --- !u!114 &-7240564318224414550
 MonoBehaviour:
   m_ObjectHideFlags: 0

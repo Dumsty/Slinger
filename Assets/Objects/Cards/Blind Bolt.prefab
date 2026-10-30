@@ -289,4 +289,4 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Bolt of Night
   description: Fire a bolt that <b>blinds</b> the hit enemy for a short duration.
-  force: 20
+  force: 60

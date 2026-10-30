@@ -95,7 +95,14 @@ public class ProjectileSpawner : NetworkBehaviour
     void SpawnBlindBoltServerRpc(Vector3 position, Vector3 direction, float force, float scale)
     {
         Vector3 spawnPos = position + direction * 1.5f;
-        GameObject bolt = Instantiate(blindBoltPrefab, spawnPos, Quaternion.identity);
+
+        // Point the projectile's +Z along the fire direction so child particle
+        // systems emit relative to travel, not a fixed world axis.
+        Quaternion rot = direction.sqrMagnitude > 0.0001f
+            ? Quaternion.LookRotation(direction.normalized)
+            : Quaternion.identity;
+
+        GameObject bolt = Instantiate(blindBoltPrefab, spawnPos, rot);
         bolt.transform.localScale *= scale;
 
         BlindBoltExplode explode = bolt.GetComponent<BlindBoltExplode>();
