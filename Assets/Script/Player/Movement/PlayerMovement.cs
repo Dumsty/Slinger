@@ -21,6 +21,17 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float airAccelTime = 0.8f;
     [SerializeField] private float groundedGrace = 0.15f;
 
+    [Header("Slopes")]
+    [Tooltip("Slopes steeper than this are treated as walls and can't be climbed.")]
+    [SerializeField] private float maxSlopeAngle = 50f;
+
+    [Tooltip("Largest upward speed physics may hand us while not jumping. " +
+             "Stops a push into a steep face from compounding into a launch.")]
+    [SerializeField] private float maxClimbSpeed = 1.5f;
+
+    [Tooltip("Grace period after a jump where the climb clamp is skipped.")]
+    [SerializeField] private float jumpClampGrace = 0.2f;
+
     public float airJumpForce = 5f;
     public int ExtraJumps;
 
@@ -39,6 +50,11 @@ public class PlayerMovement : NetworkBehaviour
     private Vector3 lastMove;
     private Vector3 currentVelocity;
     private int airJumpsUsed;
+
+    // Steep-surface tracking, written by the collision callbacks.
+    private Vector3 steepNormal;
+    private bool touchingSteep;
+    private float lastJumpTime = -10f;
 
     private void Awake()
     {
@@ -104,6 +120,34 @@ public class PlayerMovement : NetworkBehaviour
         return dir;
     }
 
+    // Removes the part of a movement direction that pushes into a too-steep
+    // face. Without this the solver resolves the overlap by shoving us
+    // upward, and that upward speed compounds every physics step.
+    private Vector3 StripIntoSteep(Vector3 dir)
+    {
+        if (!touchingSteep) return dir;
+
+        Vector3 n = steepNormal;
+        n.y = 0f;
+        if (n.sqrMagnitude < 1e-6f) return dir;
+
+        n.Normalize();
+        float into = Vector3.Dot(dir, n);
+        return into < 0f ? dir - n * into : dir;
+    }
+
+    // Keeps whatever vertical velocity physics produced, except when it's
+    // an unreasonably fast climb that we didn't ask for by jumping.
+    private float ClampedVerticalVelocity()
+    {
+        float vy = rb.linearVelocity.y;
+
+        if (Time.time - lastJumpTime > jumpClampGrace && vy > maxClimbSpeed)
+            vy = maxClimbSpeed;
+
+        return vy;
+    }
+
     private void HandleSliding(Vector3 steerInput)
     {
         sliding = true;
@@ -120,8 +164,9 @@ public class PlayerMovement : NetworkBehaviour
         float speed = lastMove.magnitude;
         lastMove += steerInput * steerStrength;
         lastMove = Vector3.ClampMagnitude(lastMove, Mathf.Min(speed, maxSlideSpeed));
+        lastMove = StripIntoSteep(lastMove);
 
-        rb.linearVelocity = new Vector3(lastMove.x, rb.linearVelocity.y, lastMove.z);
+        rb.linearVelocity = new Vector3(lastMove.x, ClampedVerticalVelocity(), lastMove.z);
         currentVelocity = new Vector3(lastMove.x, 0, lastMove.z);
 
         if (currentVelocity.magnitude < 0.5f) sliding = false;
@@ -130,6 +175,8 @@ public class PlayerMovement : NetworkBehaviour
     private void HandleGroundedMovement(Vector3 inputDir, bool effectivelyGrounded, bool wantsCrouch)
     {
         inputDir = Vector3.ClampMagnitude(inputDir, 1f);
+        inputDir = StripIntoSteep(inputDir);
+
         float speedTarget = (wantsCrouch ? crouchSpeed : playerSpeed) + SpeedBonus;
         Vector3 targetVelocity = inputDir * speedTarget;
 
@@ -142,17 +189,19 @@ public class PlayerMovement : NetworkBehaviour
 
         // Set via velocity (not MovePosition) so wall collisions are
         // resolved naturally by physics instead of causing jitter.
-        rb.linearVelocity = new Vector3(lastMove.x, rb.linearVelocity.y, lastMove.z);
+        rb.linearVelocity = new Vector3(lastMove.x, ClampedVerticalVelocity(), lastMove.z);
     }
 
     private void HandleJump()
     {
         if (grounded)
         {
+            lastJumpTime = Time.time;
             rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
         else if (airJumpsUsed < ExtraJumps)
         {
+            lastJumpTime = Time.time;
             airJumpsUsed++;
             rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
             rb.AddForce(Vector3.up * airJumpForce, ForceMode.Impulse);
@@ -171,17 +220,25 @@ public class PlayerMovement : NetworkBehaviour
         transform.position = pos;
     }
 
-    // Only counts as "grounded" if a contact's normal points mostly
-    // upward (i.e. standing on top of something) - prevents pressing
-    // against a wall from being treated as ground and resetting air jumps.
+    // Contacts are classified by their normal. Mostly-upward means we're
+    // standing on something; anything shallower is a wall or a slope too
+    // steep to walk up, which movement must not push into.
     void OnCollisionStay(Collision collision)
     {
+        float slopeCos = Mathf.Cos(maxSlopeAngle * Mathf.Deg2Rad);
+
         foreach (ContactPoint contact in collision.contacts)
         {
-            if (contact.normal.y > 0.5f)
+            float ny = contact.normal.y;
+
+            if (ny > slopeCos)
             {
                 grounded = true;
-                return;
+            }
+            else if (ny > -0.1f)
+            {
+                touchingSteep = true;
+                steepNormal = contact.normal;
             }
         }
     }
@@ -189,5 +246,6 @@ public class PlayerMovement : NetworkBehaviour
     void OnCollisionExit(Collision collision)
     {
         grounded = false;
+        touchingSteep = false;
     }
 }
