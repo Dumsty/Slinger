@@ -15,6 +15,18 @@ public class Health : NetworkBehaviour
     public NetworkVariable<float> currentHealth = new NetworkVariable<float>(100f);
     private float retryTimer;
 
+    // Owner-side: time until the next void report is allowed while still
+    // below the kill line. A fall is reported once; the retry only matters
+    // if the respawn teleport somehow never arrives.
+    private float voidReportTimer;
+    private const float VoidReportRetryDelay = 2f;
+
+    // Server-side: when the server last teleported this player. A void
+    // report arriving shortly after was sent before that teleport reached
+    // the owner, so it's stale and ignored - one fall can't score twice.
+    private float lastTeleportTime = float.NegativeInfinity;
+    private const float StaleVoidReportWindow = 1f;
+
     void Start()
     {
         if (IsServer)
@@ -24,6 +36,8 @@ public class Health : NetworkBehaviour
     void Update()
     {
         if (!IsOwner) return;
+
+        CheckForVoidFall();
 
         // HealthBar lives in the HUD, which may not exist yet when this
         // spawns, so keep retrying until it's found.
@@ -40,6 +54,42 @@ public class Health : NetworkBehaviour
         }
 
         healthBar.fillAmount = currentHealth.Value / maxHealth;
+    }
+
+    // The owner simulates its own Rigidbody (the NetworkTransform is
+    // owner-authoritative), so it's the first to know it has fallen off
+    // the map. It reports the fall; the server decides what that means.
+    void CheckForVoidFall()
+    {
+        MatchManager mm = MatchManager.Singleton;
+        if (mm == null) return;
+
+        if (transform.position.y > mm.voidKillY)
+        {
+            voidReportTimer = 0f;
+            return;
+        }
+
+        voidReportTimer -= Time.deltaTime;
+        if (voidReportTimer > 0f) return;
+        voidReportTimer = VoidReportRetryDelay;
+
+        if (IsServer) HandleVoidFall();
+        else ReportVoidFallServerRpc();
+    }
+
+    [ServerRpc]
+    void ReportVoidFallServerRpc()
+    {
+        HandleVoidFall();
+    }
+
+    void HandleVoidFall()
+    {
+        if (Time.time - lastTeleportTime < StaleVoidReportWindow) return;
+
+        if (MatchManager.Singleton != null)
+            MatchManager.Singleton.ReportVoidFall(OwnerClientId);
     }
 
     public void TakeDamage(float amount, ulong attackerId)
@@ -79,6 +129,7 @@ public class Health : NetworkBehaviour
 
     public void TeleportTo(Vector3 pos)
     {
+        lastTeleportTime = Time.time;
         TeleportClientRpc(pos);
     }
 

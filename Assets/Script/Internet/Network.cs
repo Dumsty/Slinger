@@ -61,6 +61,11 @@ public class NetworkUI : MonoBehaviour
 
     public async void Join()
     {
+        // Joining someone else's game - a code left over from a session this
+        // player hosted earlier no longer applies, so the pause menu
+        // shouldn't show (or copy) it.
+        HostJoinCode = "";
+
         try
         {
             await EnsureCleanNetworkState();

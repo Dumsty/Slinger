@@ -28,6 +28,9 @@ public class MatchManager : NetworkBehaviour
     public float countdownDuration = 10f;
     public int winScore = 3;
 
+    [Tooltip("Anyone who falls below this world height (off the edge of the map, into the void) is treated as killed.")]
+    public float voidKillY = -20f;
+
     public NetworkVariable<MatchPhase> phase = new NetworkVariable<MatchPhase>(MatchPhase.Lobby);
     public NetworkVariable<bool> playerAReady = new NetworkVariable<bool>(false);
     public NetworkVariable<bool> playerBReady = new NetworkVariable<bool>(false);
@@ -299,6 +302,33 @@ public class MatchManager : NetworkBehaviour
         {
             ResetPositionsAndHealth();
         }
+    }
+
+    // Called by Health (server-side) when a player falls below voidKillY.
+    // In a live duel it counts as a death credited to the opponent, so
+    // jumping off the map can't be used to dodge losing a round; in solo
+    // practice it's the same as dying. Anywhere else (lobby, countdown,
+    // winner screen) it just puts the player back on solid ground.
+    public void ReportVoidFall(ulong victimId)
+    {
+        if (!IsServer) return;
+
+        bool inSlot = victimId == clientA || victimId == clientB;
+        if (inSlot && IsMatchInProgress())
+        {
+            ulong opponent = victimId == clientA ? clientB : clientA;
+            ReportKill(opponent, victimId);
+
+            // ReportKill only repositions players when the round resets, so
+            // a match-winning fall would leave the victim falling through
+            // the winner screen - park them on their spawn until everyone
+            // returns to the lobby.
+            if (phase.Value == MatchPhase.MatchOver)
+                TeleportPlayer(victimId, victimId == clientA ? spawnPointA : spawnPointB);
+            return;
+        }
+
+        TeleportPlayer(victimId, lobbySpawnPoint);
     }
 
     // Shows the winner for a few seconds, then resets both players and
