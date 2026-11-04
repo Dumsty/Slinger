@@ -15,6 +15,10 @@ public class SoloMode : MonoBehaviour
 
     public void StartSolo()
     {
+        // Solo has no join code - clear any left over from a session this
+        // player hosted earlier, so the pause menu doesn't show (or copy) it.
+        NetworkUI.HostJoinCode = "";
+
         NetworkManager.Singleton.GetComponent<UnityTransport>().SetConnectionData("127.0.0.1", 7777);
         NetworkManager.Singleton.StartHost();
         NetworkManager.Singleton.SceneManager.OnLoadComplete += OnGameSceneLoaded;
