@@ -14,6 +14,9 @@ public class CardTooltip : MonoBehaviour
     [SerializeField] TMP_Text descriptionText;
     [SerializeField] Vector2 offset = new Vector2(16f, -16f);
 
+    [Tooltip("Color of the mana cost line shown above the card's description.")]
+    [SerializeField] Color manaCostColor = new Color(0.55f, 0.8f, 1f, 1f);
+
     void Awake()
     {
         Instance = this;
@@ -26,7 +29,7 @@ public class CardTooltip : MonoBehaviour
     {
         if (card == null || panel == null) return;
         nameText.text = card.DisplayName;
-        descriptionText.text = card.description;
+        descriptionText.text = "<color=#" + ColorUtility.ToHtmlStringRGB(manaCostColor) + ">Cost: " + card.manaCost + " mana</color>\n" + card.description;
         panel.gameObject.SetActive(true);
         LayoutRebuilder.ForceRebuildLayoutImmediate(panel);
         Follow();

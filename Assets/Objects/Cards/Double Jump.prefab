@@ -289,6 +289,7 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Cloud Hop
   description: Gain <b>an extra jump</b> for <b>10s</b>.
+  manaCost: 1
   duration: 10
   extraJumps: 1
   jumpForceAmount: 6

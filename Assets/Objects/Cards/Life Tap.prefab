@@ -108,6 +108,7 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Life Tap
   description: Drain <color=#FF4444>10 health</color> from yourself.
+  manaCost: 0
   damage: 10
 --- !u!1 &6888268235193678079
 GameObject:

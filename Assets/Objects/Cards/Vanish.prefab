@@ -109,6 +109,7 @@ MonoBehaviour:
   cardName: Vanish
   description: Taking a <b>20+ damage</b> hit within <b>30s</b> turns you <b>invisible</b>
     for <b>1s</b>.
+  manaCost: 1
   duration: 30
   damageThreshold: 20
   invisDuration: 1

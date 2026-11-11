@@ -109,6 +109,7 @@ MonoBehaviour:
   cardName: Shadow Walk
   description: Become <b>invisible</b> to your opponent for <b>3s</b>. <color=#B84A00>You
     cannot play cards while invisible.</color>
+  manaCost: 2
   duration: 3
 --- !u!1 &6653559487940277562
 GameObject:

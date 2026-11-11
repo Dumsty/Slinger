@@ -108,6 +108,7 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Restoration
   description: Restore <color=#55DD77>10 health</color>.
+  manaCost: 2
   healAmount: 10
 --- !u!1 &3552336625985018564
 GameObject:

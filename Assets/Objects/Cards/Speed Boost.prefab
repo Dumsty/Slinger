@@ -108,6 +108,7 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Quicksilver
   description: Gain <b>increased move speed</b> for <b>10s</b>.
+  manaCost: 1
   duration: 10
   speedBonus: 5
 --- !u!1 &7767572187737096612

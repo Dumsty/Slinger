@@ -13,9 +13,17 @@ public class SelectCard : NetworkBehaviour
     public PlayerHand playerHand;
     private Deck deck;
     private PlayerInvisibility invisibility;
+    private PlayerMana mana;
 
     // Index into playerHand.hand of the currently selected card, or -1 if none.
     public int activeSlot = -1;
+
+    // The card currently raised in hand, or null. Read by PlayerMana's HUD
+    // to show the selected card's cost.
+    public Card SelectedCard =>
+        playerHand != null && activeSlot >= 0 && activeSlot < playerHand.hand.Length
+            ? playerHand.hand[activeSlot]
+            : null;
 
     void Update()
     {
@@ -31,6 +39,7 @@ public class SelectCard : NetworkBehaviour
             return;
         }
         if (invisibility == null) invisibility = GetComponent<PlayerInvisibility>();
+        if (mana == null) mana = GetComponent<PlayerMana>();
 
         if (PauseMenu.paused) return;
         if (DeckStation.editingDeck) return;
@@ -133,15 +142,22 @@ public class SelectCard : NetworkBehaviour
 
     // Plays the active card on left click, then re-selects a neighboring
     // occupied slot (preferring left) so selection doesn't jump to -1
-    // unnecessarily. Blocked entirely while invisible.
+    // unnecessarily. Blocked entirely while invisible, and the card stays
+    // in hand if the player can't pay its mana cost.
     private void HandlePlayInput()
     {
         if (!Input.GetMouseButtonDown(0)) return;
         if (activeSlot == -1 || playerHand.hand[activeSlot] == null) return;
         if (invisibility != null && invisibility.IsInvisible) return;
 
+        Card card = playerHand.hand[activeSlot];
+
+        // Pays the cost up front. On failure PlayerMana flashes the HUD and
+        // nothing is spent. (Without a PlayerMana, cards are free.)
+        if (mana != null && !mana.TrySpend(card.manaCost)) return;
+
         int played = activeSlot;
-        playerHand.hand[activeSlot].Play();
+        card.Play();
         playerHand.RemoveCard(activeSlot, deck);
 
         int left = played - 1;

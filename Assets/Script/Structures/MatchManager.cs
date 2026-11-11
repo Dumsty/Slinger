@@ -115,6 +115,7 @@ public class MatchManager : NetworkBehaviour
 
         Health h = GetHealthForClient(clientId);
         if (h != null) h.ResetHealth();
+        ResetManaForClient(clientId);
     }
 
     public void EnterSoloMode()
@@ -175,6 +176,7 @@ public class MatchManager : NetworkBehaviour
                 Health h = GetHealthForClient(clientA);
                 if (h != null) { h.ResetHealth(); h.ClearBuffs(); }
                 ClearHandForClient(clientA);
+                ResetManaForClient(clientA);
             }
         }
         else
@@ -216,6 +218,7 @@ public class MatchManager : NetworkBehaviour
         TeleportPlayer(clientA, spawnPointA);
         Health h = GetHealthForClient(clientA);
         if (h != null) h.ResetHealth();
+        ResetManaForClient(clientA);
     }
 
     void CheckBothReady()
@@ -284,6 +287,7 @@ public class MatchManager : NetworkBehaviour
             Health h = GetHealthForClient(victimId);
             if (h != null) { h.ResetHealth(); h.ClearBuffs(); }
             ClearHandForClient(victimId);
+            ResetManaForClient(victimId);
             return;
         }
 
@@ -352,11 +356,13 @@ public class MatchManager : NetworkBehaviour
 
         ClearHandForClient(clientA);
         ClearHandForClient(clientB);
+        ResetManaForClient(clientA);
+        ResetManaForClient(clientB);
     }
 
     // Shared between "match just started" and "someone just got a kill" -
     // teleports both players to their fixed spawn points and resets
-    // health/buffs/hand for a clean start to the round.
+    // health/buffs/hand/mana for a clean start to the round.
     void ResetPositionsAndHealth()
     {
         TeleportPlayer(clientA, spawnPointA);
@@ -370,6 +376,8 @@ public class MatchManager : NetworkBehaviour
 
         ClearHandForClient(clientA);
         ClearHandForClient(clientB);
+        ResetManaForClient(clientA);
+        ResetManaForClient(clientB);
     }
 
     void ClearHandForClient(ulong clientId)
@@ -383,6 +391,19 @@ public class MatchManager : NetworkBehaviour
         // PlayerHand.hand[] only exists on the owning client - ClearHand()
         // routes this through a ClientRpc rather than touching it directly.
         playerHand.ClearHand();
+    }
+
+    void ResetManaForClient(ulong clientId)
+    {
+        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(clientId, out var client)) return;
+        if (client.PlayerObject == null) return;
+
+        PlayerMana mana = client.PlayerObject.GetComponent<PlayerMana>();
+        if (mana == null) return;
+
+        // Mana is written by the owning client (see PlayerMana), so this
+        // routes through a ClientRpc rather than setting it directly.
+        mana.ResetMana();
     }
 
     void TeleportPlayer(ulong clientId, Transform point)
