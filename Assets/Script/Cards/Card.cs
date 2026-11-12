@@ -17,6 +17,10 @@ public abstract class Card : MonoBehaviour
     public string cardName;
     [TextArea(2, 5)] public string description;
 
+    [Header("Mana")]
+    [Tooltip("Mana spent to play this card. The card can't be played without at least this much mana. 0 = free.")]
+    [Min(0)] public int manaCost = 1;
+
     // Falls back to the object name if cardName is left blank
     public string DisplayName => string.IsNullOrEmpty(cardName) ? gameObject.name : cardName;
 

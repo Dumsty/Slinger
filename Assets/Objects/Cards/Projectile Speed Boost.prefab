@@ -380,5 +380,6 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Arcane Velocity
   description: Increase your <b>projectile speed</b> for <b>10s</b>.
+  manaCost: 1
   duration: 10
   forceBonus: 15

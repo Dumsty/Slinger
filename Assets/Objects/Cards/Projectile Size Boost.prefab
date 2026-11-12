@@ -380,5 +380,6 @@ MonoBehaviour:
   prefabRef: {fileID: 0}
   cardName: Titanic Casting
   description: Increase your <b>projectile size</b> for <b>10s</b>.
+  manaCost: 2
   duration: 10
   sizeBonus: 2
