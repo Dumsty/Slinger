@@ -6,16 +6,36 @@ using Unity.Netcode;
 /// owner still sees their own model. Visibility state is a NetworkVariable
 /// so it automatically syncs and updates on every client via OnValueChanged.
 /// </summary>
+
+using UnityEngine;
+using Unity.Netcode;
+using UnityEngine.Rendering;
+
 public class PlayerInvisibility : NetworkBehaviour
 {
-    private NetworkVariable<bool> invisible = new NetworkVariable<bool>(false);
+    public Transform wizardVisual;
+    public Renderer capsuleRenderer;
+
+    private NetworkVariable<bool> invisible =
+        new NetworkVariable<bool>(false);
+
     private Renderer[] renderers;
+    private bool[] originallyEnabled;
+    private ShadowCastingMode[] originalShadowModes;
 
     public bool IsInvisible => invisible.Value;
 
     void Awake()
     {
-        renderers = GetComponentsInChildren<Renderer>();
+        renderers = GetComponentsInChildren<Renderer>(true);
+        originallyEnabled = new bool[renderers.Length];
+        originalShadowModes = new ShadowCastingMode[renderers.Length];
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            originallyEnabled[i] = renderers[i].enabled;
+            originalShadowModes[i] = renderers[i].shadowCastingMode;
+        }
     }
 
     public override void OnNetworkSpawn()
@@ -27,6 +47,14 @@ public class PlayerInvisibility : NetworkBehaviour
     public override void OnNetworkDespawn()
     {
         invisible.OnValueChanged -= OnInvisibleChanged;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null) continue;
+
+            renderers[i].enabled = originallyEnabled[i];
+            renderers[i].shadowCastingMode = originalShadowModes[i];
+        }
     }
 
     void OnInvisibleChanged(bool oldValue, bool newValue)
@@ -34,13 +62,36 @@ public class PlayerInvisibility : NetworkBehaviour
         ApplyVisibility(newValue);
     }
 
-    // Only hides renderers for non-owning clients, so the invisible player
-    // still sees their own body (if visible at all in first person).
     void ApplyVisibility(bool isInvisible)
     {
-        bool shouldHide = isInvisible && !IsOwner;
-        foreach (var r in renderers)
-            r.enabled = !shouldHide;
+        bool hideFromOthers = isInvisible && !IsOwner;
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            Renderer r = renderers[i];
+            if (r == null) continue;
+
+            bool isWizard = wizardVisual != null &&
+                (r.transform == wizardVisual ||
+                 r.transform.IsChildOf(wizardVisual));
+
+            bool isCapsule = r == capsuleRenderer;
+
+            // Preserve originally disabled renderers.
+            r.enabled = originallyEnabled[i] &&
+                        !isCapsule &&
+                        !hideFromOthers;
+
+            // Owner sees only the Wizard's shadow.
+            if (IsOwner && isWizard && r.enabled)
+            {
+                r.shadowCastingMode = ShadowCastingMode.ShadowsOnly;
+            }
+            else
+            {
+                r.shadowCastingMode = originalShadowModes[i];
+            }
+        }
     }
 
     public void SetInvisible(bool value)
